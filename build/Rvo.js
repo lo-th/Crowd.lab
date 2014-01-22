@@ -1,17 +1,16 @@
 /**
- * OimoPhysics DEV 1.1.0a
+ * RVO 2.0a
  * @author Samuel Giradin / http://www.visualiser.fr//
- * @Copyright (c) 2012-2013 EL-EMENT saharan
  * 
- * Compact rvo js 2014
+ * Compact Rvo.js
  * @author LoTh / http://3dflashlo.wordpress.com/
  */
 
 var RVO = { REVISION: '2.0' };
 
 RVO.EPSILON = 0.0001;
-RVO.ToDeg = 180 / Math.PI;
 RVO.MAX_LEAF_SIZE = 10;
+RVO.ToDeg = 180 / Math.PI;
 
 //------------------------------
 //  PERFORMANCE
@@ -44,24 +43,14 @@ RVO.Simulator.prototype = {
 
     clear:function () {
         
-  // this.kdTree_ = new RVO.KdTree();
         var i = this.agents_.length;
         while(i--){ 
-           // this.agents_[i].agentNeighbors_.length = 0;
-           // this.agents_[i].obstacleNeighbors_.length = 0;
-
             this.agents_.pop(); 
         }
         i = this.obstacles_.length;
-        while(i--){ this.obstacles_.pop(); }
-
-        //this.agents_.length = 0;
-        //this.obstacles_.length = 0;
-
-        //this.kdTree.agents_.length = 0; //= [];
-        //this.kdTree.agentTree_.length = 0;// = [];
-     //   this.kdTree_ = null;
-        //this.defaultAgent_ = null;
+        while(i--){ 
+        	this.obstacles_.pop(); 
+        }
     },
 
     doStep:function () {
@@ -70,31 +59,15 @@ RVO.Simulator.prototype = {
         var time2=Date.now();
         this.performance.KdTree=time2-time1;
 
-        //var max = this.getNumAgents();
         var i = this.agents_.length;
-
-        //for (var i = 0; i < this.getNumAgents(); ++i) {
         while(i--){
 
             this.agents_[i].computeNeighbors();
             this.agents_[i].computeNewVelocity();
-       // }
-        //
-       //
-       // while(i--){ 
             this.agents_[i].update(); 
         }
         var time3=Date.now();
         this.performance.updateAgent=time3-time2;
-        //for (var i = 0; i < this.getNumAgents(); ++i) {
-       // var i = max;
-        /*while(i--){
-            
-             this.agents_[i].computeNeighbors();
-            this.agents_[i].update();
-        }*/
-
-       // this.time_ += this.timeStep_;
     },
 
     processObstacles:function () {
@@ -126,7 +99,6 @@ RVO.Simulator.prototype = {
                 obstacle.nextObstacle_.prevObstacle_ = obstacle;
             }
 
-            //obstacle.unitDir_ = RVO.Normalize(vertices[(i == vertices.length - 1 ? 0 : i + 1)].moins(vertices[i]));
             obstacle.unitDir_ = (vertices[(i == vertices.length - 1 ? 0 : i + 1)].moins(vertices[i])).normalize();
 
 
@@ -159,21 +131,15 @@ RVO.Simulator.prototype = {
         agent.timeHorizon_ = this.defaultAgent_.timeHorizon_;
         agent.timeHorizonObst_ = this.defaultAgent_.timeHorizonObst_;
         agent.velocity_ = this.defaultAgent_.velocity_;
-        //agent.prefVelocity_ = new RVO.Vector2();
 
         agent.id_ = this.agents_.length;
 
-       // this.agents_.push(agent);
         this.agents_[agent.id_] = agent;
-        //this.agents_.length = agent.id_ -1;
-
-        //return this.agents_.length - 1;
     },
     setAgentDefaults:function (neighborDist, maxNeighbors, timeHorizon, timeHorizonObst, radius, maxSpeed, velocity) {
         if (typeof velocity === "undefined") { velocity = new RVO.Vector2(0, 0); }
         if (this.defaultAgent_ == null) {
             this.defaultAgent_ = new RVO.Agent();
-            //this.defaultAgent_.parent = this;
         }
 
         this.defaultAgent_.maxNeighbors_ = maxNeighbors;
@@ -186,7 +152,6 @@ RVO.Simulator.prototype = {
     },
     setAgentPrefVelocity:function (agentNo, prefVelocity) {
         this.agents_[agentNo].prefVelocity_ = prefVelocity;
-        // console.log(prefVelocity.x_, prefVelocity.y_);
     },
     setTimeStep:function (v) {
         this.timeStep_ = v;
@@ -289,18 +254,13 @@ RVO.Agent.prototype = {
             }
 
             /* Not yet covered. Check for collisions. */
-            var distSq1 = relativePosition1.absSq();//RVO.AbsSq(relativePosition1);
-            var distSq2 = relativePosition2.absSq();//RVO.AbsSq(relativePosition2);
+            var distSq1 = relativePosition1.absSq();
+            var distSq2 = relativePosition2.absSq();
 
             var radiusSq = RVO.Sqr(this.radius_);
 
             var obstacleVector = obstacle2.point_.moins(obstacle1.point_);
-
-            // var v1: Vector2 = relativePosition1.moinsSelf();
-            var s = relativePosition1.moinsSelf().mul(obstacleVector) / obstacleVector.absSq();//RVO.AbsSq(obstacleVector);
-
-            //  var v2: Vector2 = obstacleVector.mul_k(-s);
-          // var distSqLine = RVO.AbsSq(relativePosition1.moinsSelf().plus(obstacleVector.mul_k(-s)));
+            var s = relativePosition1.moinsSelf().mul(obstacleVector) / obstacleVector.absSq();
             var distSqLine = (relativePosition1.moinsSelf().plus(obstacleVector.mul_k(-s))).absSq();
 
 
@@ -310,7 +270,6 @@ RVO.Agent.prototype = {
                 /* Collision with left vertex. Ignore if non-convex. */
                 if (obstacle1.isConvex_) {
                     line.point = new RVO.Vector2(0, 0);
-                    //line.direction = RVO.Normalize(new RVO.Vector2(-relativePosition1.y, relativePosition1.x));
                     line.direction = new RVO.Vector2(-relativePosition1.y, relativePosition1.x).normalize();
 
 
@@ -322,7 +281,6 @@ RVO.Agent.prototype = {
                 * or if it will be taken care of by neighoring obstace */
                 if (obstacle2.isConvex_ && RVO.Det(relativePosition2, obstacle2.unitDir_) >= 0) {
                     line.point = new RVO.Vector2(0, 0);
-                    //line.direction = RVO.Normalize(new RVO.Vector2(-relativePosition2.y, relativePosition2.x));
                     line.direction = new RVO.Vector2(-relativePosition2.y, relativePosition2.x).normalize();
                     this.orcaLines_.push(line);
                 }
@@ -430,7 +388,6 @@ RVO.Agent.prototype = {
 
             if ((t < 0 && tLeft < 0) || (obstacle1 == obstacle2 && tLeft < 0 && tRight < 0)) {
                 /* Project on left cut-off circle. */
-                //var unitW = RVO.Normalize(this.velocity_.moins(leftCutoff));
                 var unitW = this.velocity_.moins(leftCutoff).normalize();
 
                 line.direction = new RVO.Vector2(unitW.y, -unitW.x);
@@ -439,7 +396,6 @@ RVO.Agent.prototype = {
                 continue;
             } else if (t > 1 && tRight < 0) {
                 /* Project on right cut-off circle. */
-                //var unitW = RVO.Normalize(this.velocity_.moins(rightCutoff));
                 var unitW = this.velocity_.moins(rightCutoff).normalize();
 
                 line.direction = new RVO.Vector2(unitW.y, -unitW.x);
@@ -457,13 +413,7 @@ RVO.Agent.prototype = {
             var distSqLeft = ((tLeft < 0) ? Number.POSITIVE_INFINITY :(this.velocity_.moins(leftCutoff.plus(leftLegDirection.mul_k(tLeft)))).absSq() );
 
             var distSqRight = ((tRight < 0) ? Number.POSITIVE_INFINITY : (this.velocity_.moins(rightCutoff.plus(rightLegDirection.mul_k(tRight)))).absSq() );
-            /*
-            var distSqCutoff = ((t < 0 || t > 1 || obstacle1 == obstacle2) ? Number.POSITIVE_INFINITY : RVO.AbsSq(this.velocity_.moins(leftCutoff.plus(cutoffVec.mul_k(t)))));
-
-            var distSqLeft = ((tLeft < 0) ? Number.POSITIVE_INFINITY : RVO.AbsSq(this.velocity_.moins(leftCutoff.plus(leftLegDirection.mul_k(tLeft)))));
-
-            var distSqRight = ((tRight < 0) ? Number.POSITIVE_INFINITY : RVO.AbsSq(this.velocity_.moins(rightCutoff.plus(rightLegDirection.mul_k(tRight)))));
-            */
+            
 
             if (distSqCutoff <= distSqLeft && distSqCutoff <= distSqRight) {
                 /* Project on cut-off line. */
@@ -557,16 +507,12 @@ RVO.Agent.prototype = {
                 var invTimeStep = 1 / this.parent.timeStep_;
 
                 /* Vector from cutoff center to relative velocity. */
-                // var w: Vector2 = Vector2.v_minus(relativeVelocity, Vector2.v_mul(relativePosition, invTimeStep ));
                 var w = relativeVelocity.moins(relativePosition.mul_k(invTimeStep));
-
-                //var wLength = RVO.Abs(w);
                 var wLength = w.abs();
                 var unitW = w.div_k(wLength);
 
                 line.direction = new RVO.Vector2(unitW.y, -unitW.x);
 
-                // u = Vector2.v_mul(unitW, (combinedRadius * invTimeStep - wLength));
                 u = unitW.mul_k(combinedRadius * invTimeStep - wLength);
             }
 
@@ -585,10 +531,8 @@ RVO.Agent.prototype = {
     },
     insertAgentNeighbor:function (agent, rangeSq) {
         if (this !== agent) {
-            //var distSq = RVO.AbsSq(this.position_.moins(agent.position_));
             var distSq = this.position_.moins(agent.position_).absSq();
 
-            //  console.log(distSq);
             if (distSq < this.RangeSq) {
                 if (this.agentNeighbors_.length < this.maxNeighbors_) {
                     this.agentNeighbors_.push(new RVO.KeyValuePair(distSq, agent));
@@ -647,9 +591,7 @@ RVO.Agent.prototype = {
         }
     },
     linearProgram1:function (lines, lineNo, radius, optVelocity, directionOpt, result) {
-        // var dotProduct : number = Vector2.v_mul_v(lines[lineNo].point , lines[lineNo].direction);
         var dotProduct = lines[lineNo].point.mul(lines[lineNo].direction);
-        //var discriminant = RVO.Sqr(dotProduct) + RVO.Sqr(radius) - RVO.AbsSq(lines[lineNo].point);
         var discriminant = RVO.Sqr(dotProduct) + RVO.Sqr(radius) - (lines[lineNo].point).absSq();
 
         if (discriminant < 0) {
@@ -665,9 +607,7 @@ RVO.Agent.prototype = {
         var point = lines[lineNo].point;
         var direction = lines[lineNo].direction;
 
-        //for (var i = 0, l=lineNo; i !== l; ++i) {
         while(i--){
-            
             var denominator = RVO.Det(direction, lines[i].direction);
             var numerator = RVO.Det(lines[i].direction, point.moins(lines[i].point));
 
@@ -699,25 +639,20 @@ RVO.Agent.prototype = {
             /* Optimize direction. */
             if (optVelocity.mul(direction) > 0) {
                 /* Take right extreme. */
-                // result = Vector2.v_add(lines[lineNo].point, Vector2.v_mul(lines[lineNo].direction, tRight));
                 this.newVelocity_ = point.plus(direction.mul_k(tRight));
             } else {
-                /* Take left extreme. */ // result = Vector2.v_add(lines[lineNo].point, Vector2.v_mul(lines[lineNo].direction, tLeft));
+                /* Take left extreme. */ 
                 this.newVelocity_ = point.plus(direction.mul_k(tLeft));
             }
         } else {
             /* Optimize closest point. */
-            // var t1: number = Vector2.v_mul_v(lines[lineNo].direction, Vector2.v_minus(optVelocity, lines[lineNo].point));
             var t1 = direction.mul(optVelocity.moins(point));
 
             if (t1 < tLeft) {
-                //  result = Vector2.v_add(lines[lineNo].point, Vector2.v_mul(lines[lineNo].direction, tLeft));
                 this.newVelocity_ = point.plus(direction.mul_k(tLeft));
             } else if (t1 > tRight) {
-                // result = Vector2.v_add(lines[lineNo].point, Vector2.v_mul(lines[lineNo].direction, tRight));
                 this.newVelocity_ = point.plus(direction.mul_k(tRight));
             } else {
-                //result = Vector2.v_add(lines[lineNo].point, Vector2.v_mul(lines[lineNo].direction, t));
                 this.newVelocity_ = point.plus(direction.mul_k(t1));
             }
         }
@@ -731,25 +666,16 @@ RVO.Agent.prototype = {
             * Optimize direction. Note that the optimization velocity is of unit
             * length in this case.
             */
-            // result = optVelocity.mul_k(radius);
             this.newVelocity_ = optVelocity.mul_k(radius);
             
-        //} else if (RVO.AbsSq(optVelocity) > RVO.Sqr(radius)) {
         } else if ( optVelocity.absSq() > RVO.Sqr(radius)) {
             /* Optimize closest point and outside circle. */
-            // result =
-            //this.newVelocity_ = RVO.Normalize(optVelocity).mul_k(radius);
             this.newVelocity_ = (optVelocity.normalize()).mul_k(radius);
         } else {
             /* Optimize closest point and inside circle. */
-            // result = optVelocity;
             this.newVelocity_ = optVelocity;
         }
 
-       // var i = lines.length:
-
-       // for (var i = 0; i < lines.length; ++i) {
-       //while(i--){
         for (var i = 0, j= lines.length; i < j; ++i) {
             if (RVO.Det(lines[i].direction, lines[i].point.moins(this.newVelocity_)) > 0) {
                 /* Result does not satisfy constraint i. Compute new optimal result. */
@@ -779,7 +705,6 @@ RVO.Agent.prototype = {
 
             if (RVO.Det(direction, point.moins(this.velocity_)) > distance) {
                 /* Result does not satisfy constraint of line i. */
-                //std::vector<Line> projLines(lines.begin(), lines.begin() + numObstLines);
                 var projLines = [];
                 for (var ii = 0; ii < numObstLines; ++ii) {
                     projLines.push(lines[ii]);
@@ -803,15 +728,12 @@ RVO.Agent.prototype = {
                             line.point = point.plus(point2).mul_k(.5);
                         }
                     } else {
-                        // line.point = Vector2.v_add(lines[i].point , Vector2.v_mul( lines[i].direction ,  (RVOMath.det(lines[j].direction, Vector2.v_minus(lines[i].point , lines[j].point)) / determinant))) ;
-                        // line.point = lines[i].point + (Vector2.det(lines[j].direction, lines[i].point.moins( lines[j].point)) / determinant) * lines[i].direction;
                         var n = RVO.Det(direction2, point.moins(point2)) / determinant;
                         var v = direction.mul_k(n);
                         line.point = point.plus(v);
                         // console.log("this case OO");
                     }
 
-                    //line.direction = RVO.Normalize(lines[j].direction.moins(lines[i].direction));
                     line.direction = (direction2.moins(direction)).normalize();
                     projLines.push(line);
                 }
@@ -1305,25 +1227,7 @@ RVO.FloatPair.sup = function (lhs, rhs) {
 RVO.FloatPair.sup_equal = function (lhs, rhs) {
     return !RVO.FloatPair.inf;
 }
-/*
-RVO.FloatPair.prototype = {
-    constructor: RVO.FloatPair,
 
-    inf:function (lhs, rhs) {
-        return (lhs._a < rhs._a || !(rhs._a < lhs._a) && lhs._b < rhs._b);
-    },
-    inf_equal:function (lhs, rhs) {
-        return (lhs._a == rhs._a && lhs._b == rhs._b) || lhs < rhs;
-    },
-    sup:function (lhs, rhs) {
-        return !RVO.FloatPair.inf_equal(lhs, rhs);
-        // return !inf_equal(lhs, rhs);
-    },
-    sup_equal:function (lhs, rhs) {
-        return !RVO.FloatPair.inf;
-    }
-}
-*/
 //------------------------------
 //  KEYVALUEPAIR
 //------------------------------
@@ -1403,30 +1307,6 @@ RVO.Vector2.prototype = {
     clone: function () {
         return new RVO.Vector2( this.x, this.y );
     }
-
-
-    /*
-
-    moins:function (v) {
-        return new RVO.Vector2(this.x - v.x, this.y - v.y);
-    },
-    moinsSelf:function () {
-        return new RVO.Vector2(-this.x, -this.y);
-    },
-    plus:function (v) {
-        return new RVO.Vector2(this.x + v.x, this.y + v.y);
-    },
-
-    mul:function (v) {
-        return this.x * v.x + this.y * v.y;
-    },
-    mul_k:function (k) {
-        return new RVO.Vector2(this.x * k, this.y * k);
-    },
-    div_k:function (k) {
-        var s = 1 / k;
-        return new RVO.Vector2(this.x * s, this.y * s);
-    }*/
 }
 
 //------------------------------
@@ -1442,24 +1322,7 @@ RVO.Line = function() {
 
 RVO.Sqr = function(p){ return p * p; }
 
-//RVO.AbsSq = function (v) { return v.mul(v); }
-
-//RVO.Abs = function (v) { return Math.sqrt(v.mul(v)); }
-
-//RVO.AbsSq = function (v) { 
-   // var v2 = v.clone();
-  // return v2.x * v.x + v2.y * v.y;
-//    return v.mul(v); 
-
-//}
-
-//RVO.Abs = function (v) { return Math.sqrt(v.mul(v)); }
-
 RVO.Det = function (v1, v2) { return v1.x * v2.y - v1.y * v2.x; }
-
-//RVO.Normalize = function (v) { return v.div_k(RVO.Abs(v)); }
-
-//RVO.Normalize = function (v) { return v.div_k(v.abs()); }
 
 RVO.LeftOf = function (a, b, c) { return RVO.Det(a.moins(c), b.moins(a)); }
 
@@ -1472,15 +1335,4 @@ RVO.DistSqPointLineSegment = function (a, b, c) {
     } else {
         return (c.moins(a.plus(b.moins(a).mul_k(r)))).absSq();
     }
-
-    /*
-    var r = c.moins(a).mul(b.moins(a)) / RVO.AbsSq(b.moins(a));
-    if (r < 0) {
-        return RVO.AbsSq(c.moins(a));
-    } else if (r > 1) {
-        return RVO.AbsSq(c.moins(b));
-    } else {
-        return RVO.AbsSq(c.moins(a.plus(b.moins(a).mul_k(r))));
-    }*/
 }
-
