@@ -368,6 +368,37 @@ TERRAIN.Generate.prototype = {
 
 }
 
+TERRAIN.Water = function(renderer, camera, scene, light) {
+    this.waterNormals = new THREE.ImageUtils.loadTexture( 'images/water.jpg' );
+    this.waterNormals.wrapS = this.waterNormals.wrapT = THREE.RepeatWrapping; 
+
+    this.water = new THREE.Water( renderer, camera, scene , {
+        textureWidth: 256, 
+        textureHeight: 256,
+        waterNormals: this.waterNormals,
+        alpha:  0.8,
+        sunDirection:  light.position.normalize(),
+        sunColor: 0xffffee,
+        waterColor: 0x001e0f,
+        distortionScale: 50.0,
+    } );
+
+    this.mirrorMesh = new THREE.Mesh( new THREE.PlaneGeometry(10000, 10000, 10, 10 ),  this.water.material);
+    this.mirrorMesh.add( this.water );
+    this.mirrorMesh.rotation.x = - Math.PI * 0.5;
+    this.mirrorMesh.position.y = -0.1
+    scene.add( this.mirrorMesh );
+}
+
+TERRAIN.Water.prototype = {
+    constructor: TERRAIN.Water,
+
+    render:function () {
+        this.water.material.uniforms.time.value += 1.0 / 60.0;
+        this.water.render();
+    }
+}
+
 TERRAIN.Prng = function() {
     var iMersenne = 2147483647;
     var rnd = function(seed) {

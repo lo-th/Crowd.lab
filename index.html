@@ -10,7 +10,7 @@
         margin: 0px;
         background-color: #222222;
         overflow: hidden;
-        color: #cccccc;
+        color: #000000;
         font-family: monospace;
         font-size: 11px;
     }
@@ -38,6 +38,10 @@
 <script src="js/PerlinSimplex.js"></script>
 <script src="js/BufferGeometryUtils.js"></script>
 <script src="js/Terrain.js"></script>
+<script src="js/ShaderTerrain.js"></script>
+
+<script src="js/Mirror.js"></script>
+<script src="js/WaterShader.js"></script>
 
 </head>
 <body>
@@ -45,7 +49,7 @@
 <div id='interface'>
     <input type="button" value="RUN" onClick=demo()>
     agentX4: <input type="number" name="Agent" min="10" max="2000" value="60"  id='Agent' class='imp'>
-    step: <input type="number" name="Step" min="0" max="200" value="3"  id='Step' class='imp'>
+    step: <input type="number" name="Step" min="0" max="200" value="2"  id='Step' class='imp'>
     <!--radius1: <input type="number" name="r1" min="1" max="100" value="8"  id='R1' class='imp'>
     radius2: <input type="number" name="r2" min="1" max="100" value="6"  id='R2' class='imp'>-->
     <input type="button" value="Terrain" onClick=terrain.test()>
@@ -62,9 +66,10 @@ var matBox1, matSphere1, matSphere2, matGround, matBox2, matBox3, glow1, glow2, 
 var ground;
 var targetList = [];
 var terrain;
+var water;
 var glowTexture;
 
-var camPos = { horizontal: 40, vertical: 60, distance: 1000, automove: false };
+var camPos = { horizontal: 40, vertical: 80, distance: 600, automove: false };
 var mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, tx:0, ty:0, down:false, over:false, moving:true };
 
 var fps=0, time, time_prev=0, fpsint = 0;
@@ -86,30 +91,36 @@ init();
 function init() {
 
     // THREE init
-    renderer = new THREE.WebGLRenderer({precision: "mediump", antialias:false});
-    renderer.setClearColor( 0x222222, 1 );
+    //renderer = new THREE.WebGLRenderer({precision: "mediump", antialias:false});
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.autoClearColor = false;
+    //renderer.setClearColor( 0x222222, 1 );
     //renderer.gammaInput = true;
     //renderer.gammaOutput = true;
-
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    
     container = document.getElementById("container");
     container.appendChild( renderer.domElement );
 
-    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+    scene = new THREE.Scene();
+
+    camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 20000 );
     camera.position.set( 0, 100, 1000 );
     center = new THREE.Vector3();
     moveCamera();
 
-    scene = new THREE.Scene();
-    //scene.fog = new THREE.FogExp2( 0x505050, 0.0025 );
-    //scene.fog = new THREE.Fog( 0x505050, 200, 1300 );
+    
+    //scene.fog = new THREE.FogExp2( 0xd7ccb0, 0.0025 );
+    //scene.fog = new THREE.Fog( 0xd7ccb0, 1000, 5000 );
     //scene.matrixAutoUpdate = false;
 
     projector = new THREE.Projector();
 
     scene.add( new THREE.AmbientLight( 0x383838 ) );
-    light = new THREE.DirectionalLight( 0xffffff , 1.3);
-    light.position.set( 0.3, 1, 0.5 ).normalize();
+
+    light = new THREE.DirectionalLight( 0xffffee , 1 );
+    light.position.set( 0.3, 1, 0.5 );
+    //light.position.set( - 1, 0.4, - 1 );
     scene.add( light );
 
     matSphere1 = new THREE.MeshLambertMaterial( { color: 0x3d9970, name:'sph' } );
@@ -130,7 +141,7 @@ function init() {
     glow1 = new THREE.SpriteMaterial({ map: glowTexture, color: 0x3d9970, transparent: false, blending: THREE.AdditiveBlending, useScreenCoordinates: false , depthTest:false,  depthWrite: false});
     glow2 = new THREE.SpriteMaterial({ map: glowTexture, color: 0xff851b, transparent: false, blending: THREE.AdditiveBlending, useScreenCoordinates: false , depthTest:false,  depthWrite: false});//
 
-    tShadow = new THREE.MeshBasicMaterial({ ambient: 0xFFFFFF, map: glowTexture2, color: 0xFFFFFF, transparent: true, blending: THREE.MultiplyBlending , fog:false});//, depthWrite: false depthTest 
+    tShadow = new THREE.MeshBasicMaterial({ ambient: 0xFFFFFF, map: glowTexture2, color: 0xFFFFFF, transparent: true, blending: THREE.MultiplyBlending , fog:false, depthWrite:false});//, depthWrite: false depthTest 
 
 
 
@@ -149,6 +160,37 @@ function init() {
     terrain.init();
     targetList.push(terrain.mesh);
 
+    water = new TERRAIN.Water(renderer, camera, scene, light);
+
+    // load skybox
+
+    var format = ".jpg";
+    var r = "images/sky32/";
+    var urls = [ r + "posx"+format, r + "negx"+format,
+                 r + "posy"+format, r + "negy"+format,
+                 r + "posz"+format, r + "negz"+format ];
+
+    var cubeMap = THREE.ImageUtils.loadTextureCube( urls );
+    cubeMap.format = THREE.RGBFormat;
+
+    var cubeShader = THREE.ShaderLib['cube'];
+    cubeShader.uniforms['tCube'].value = cubeMap;
+
+    var skyBoxMaterial = new THREE.ShaderMaterial( {
+        fragmentShader: cubeShader.fragmentShader,
+        vertexShader: cubeShader.vertexShader,
+        uniforms: cubeShader.uniforms,
+        depthWrite: false,
+        side: THREE.BackSide
+    });
+
+    var skyBox = new THREE.Mesh(
+        new THREE.CubeGeometry( 10000, 10000, 10000 ),
+        skyBoxMaterial
+    );
+    
+    scene.add( skyBox );
+
     
 
     content = new THREE.Object3D();
@@ -163,7 +205,7 @@ function init() {
     window.addEventListener( 'resize', onWindowResize, false );
 
      // RVO simulation
-    RvoWorker.postMessage({tell:"INIT", timerStep:1000/60, simulationStep:3, timer:false, nAgent:60 });
+    RvoWorker.postMessage({tell:"INIT", timerStep:1000/60, simulationStep:2, timer:false, nAgent:60 });
 
     //setInterval(loop, 1000/60);
     loop();
@@ -220,9 +262,9 @@ function newMesh(s){
     
     m.add(shad);
 
-    var sprite = new THREE.Sprite( mat3 );
+    /*var sprite = new THREE.Sprite( mat3 );
     sprite.scale.set(s*6, s*6, 1.0);
-    m.add(sprite);
+    m.add(sprite);*/
 
 
 }
@@ -295,6 +337,7 @@ function loop() {
 
     t01 = Date.now();
 
+    if(water)water.render();
     renderer.render( scene, camera );
 
     // fps calc
@@ -302,7 +345,7 @@ function loop() {
     ms = time - t01;
     if(ms > maxms)maxms = ms;
     if (time - 1000 > time_prev) {
-        time_prev = time; fpsint = fps; fps = 0;
+        time_prev = time; fpsint = fps; fps = 0;maxms=0;
     } fps++;
 
     requestAnimationFrame( loop );
