@@ -4,6 +4,7 @@
 <title>RVO Worker</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=11" />
 
 <style>
     body {
@@ -18,7 +19,7 @@
         position: absolute;
         left:10px;
         top:10px;
-        width:456px;
+        width:600px;
         height:20px;
     }
     #info{
@@ -50,9 +51,11 @@
     <input type="button" value="RUN" onClick=demo()>
     agentX4: <input type="number" name="Agent" min="10" max="2000" value="60"  id='Agent' class='imp'>
     step: <input type="number" name="Step" min="0" max="200" value="2"  id='Step' class='imp'>
+    <input type="button" value="Timer on" onClick=changeTimer() id='timer' >
     <!--radius1: <input type="number" name="r1" min="1" max="100" value="8"  id='R1' class='imp'>
     radius2: <input type="number" name="r2" min="1" max="100" value="6"  id='R2' class='imp'>-->
     <input type="button" value="Terrain" onClick=terrain.test()>
+    <input type="button" value="Water off" onClick=addWater()  id='water'>
 </div>
 <div id='info'></div>
 </body>   
@@ -85,6 +88,8 @@ var initNext = null;
 
 var RvoWorker = new Worker('js/Rvo.worker.js');
 RvoWorker.postMessage = RvoWorker.webkitPostMessage || RvoWorker.postMessage;
+
+var isTimer = true;
 
 init();
 
@@ -129,7 +134,7 @@ function init() {
     matBox1 = new THREE.MeshLambertMaterial( {  color: 0xff851b, name:'box' } );
 
     matBox3 = new THREE.MeshLambertMaterial( {  color: 0x303030, name:'box', transparent:true, opacity:0.5  } );
-    matGround = new THREE.MeshBasicMaterial( {  color: 0x151515, name:'box' } );
+    matGround = new THREE.MeshBasicMaterial( {  color: 0x151515 } );
 
     geoSphere = new THREE.SphereGeometry( 1 , 10, 6 );
     geoBox = new THREE.CubeGeometry( 1, 1, 1 );
@@ -145,22 +150,23 @@ function init() {
 
 
 
-    /*ground = new THREE.Mesh(new THREE.PlaneGeometry( ww, hh, 2,2 ), matGround);
+    ground = new THREE.Mesh(new THREE.PlaneGeometry( ww, ww, 1,1 ), matGround);
     ground.rotation.x = -90 * ToRad;
     ground.visible = false;
     scene.add(ground);
-    var helper = new THREE.GridHelper( ww/2, ww/32 );
+    targetList.push(ground);
+    /*var helper = new THREE.GridHelper( ww/2, ww/32 );
     helper.setColors( 0x000000, 0x404040 );
     helper.rotation.x = -90 * ToRad;
     ground.add( helper );
 
     targetList.push(ground);*/
 
-    terrain = new TERRAIN.Generate(scene, 256, 1100, 120, 50);
+    terrain = new TERRAIN.Generate(scene, 256, ww, 120, 50);
     terrain.init();
-    targetList.push(terrain.mesh);
+    
 
-    water = new TERRAIN.Water(renderer, camera, scene, light);
+   // 
 
     // load skybox
 
@@ -205,16 +211,44 @@ function init() {
     window.addEventListener( 'resize', onWindowResize, false );
 
      // RVO simulation
-    RvoWorker.postMessage({tell:"INIT", timerStep:1000/60, simulationStep:2, timer:false, nAgent:60 });
+    RvoWorker.postMessage({tell:"INIT", timerStep:1000/60, simulationStep:2, timer:isTimer, nAgent:60 });
 
     //setInterval(loop, 1000/60);
     loop();
+}
+
+function addWater() {
+    var base = document.getElementById("water");
+    if(!water){
+        water = new TERRAIN.Water(renderer, camera, scene, light);
+        base.value = "Water on";
+    } else {
+        water.clear()
+        water= null;
+
+        base.value = "Water off";
+
+    }
 }
 
 function demo() {
 
     RvoWorker.postMessage({tell:"CLEAR"});
     initNext = demoLanche;
+
+}
+
+function changeTimer() {
+    var base = document.getElementById("timer");
+    if(base.value === "Timer off"){
+        base.value = "Timer on";
+        isTimer = true;
+
+    } else {
+        base.value = "Timer off";
+        isTimer = false;
+
+    }
 
 }
 
@@ -226,7 +260,7 @@ function demoLanche() {
     //radius1 = r1;
     //radius2 = r2;
     //console.log(radius1,radius2)
-    RvoWorker.postMessage({tell:"INIT", timerStep:1000/60, simulationStep:step, timer:false, nAgent:na});
+    RvoWorker.postMessage({tell:"INIT", timerStep:1000/60, simulationStep:step, timer:isTimer, nAgent:na});
 }
 
 //-----------------------------------------------------
@@ -275,9 +309,9 @@ function obsMesh(p, s){
     m.position.copy(p);
     //m.visible = false;
     content.add(m);
-    var helper = new THREE.BoxHelper(m);
+    /*var helper = new THREE.BoxHelper(m);
     helper.material.color.set( 0x000000 );
-    m.add( helper );
+    m.add( helper );*/
 }
 
 function clearContent(){

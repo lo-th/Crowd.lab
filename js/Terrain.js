@@ -371,6 +371,7 @@ TERRAIN.Generate.prototype = {
 TERRAIN.Water = function(renderer, camera, scene, light) {
     this.waterNormals = new THREE.ImageUtils.loadTexture( 'images/water.jpg' );
     this.waterNormals.wrapS = this.waterNormals.wrapT = THREE.RepeatWrapping; 
+    //this.waterNormal.format = THREE.RGBFormat;
 
     this.water = new THREE.Water( renderer, camera, scene , {
         textureWidth: 256, 
@@ -392,7 +393,9 @@ TERRAIN.Water = function(renderer, camera, scene, light) {
 
 TERRAIN.Water.prototype = {
     constructor: TERRAIN.Water,
-
+    clear:function () {
+        scene.remove( this.mirrorMesh );
+    },
     render:function () {
         this.water.material.uniforms.time.value += 1.0 / 60.0;
         this.water.render();
