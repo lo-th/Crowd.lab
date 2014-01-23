@@ -36,6 +36,7 @@
 
 <script src="js/three.min.js"></script>
 <script src="js/PerlinSimplex.js"></script>
+<script src="js/BufferGeometryUtils.js"></script>
 <script src="js/Terrain.js"></script>
 
 </head>
@@ -47,6 +48,7 @@
     step: <input type="number" name="Step" min="0" max="200" value="3"  id='Step' class='imp'>
     <!--radius1: <input type="number" name="r1" min="1" max="100" value="8"  id='R1' class='imp'>
     radius2: <input type="number" name="r2" min="1" max="100" value="6"  id='R2' class='imp'>-->
+    <input type="button" value="Terrain" onClick=terrain.test()>
 </div>
 <div id='info'></div>
 </body>   
@@ -85,9 +87,9 @@ function init() {
 
     // THREE init
     renderer = new THREE.WebGLRenderer({precision: "mediump", antialias:false});
-    renderer.setClearColor( 0x505050, 1 );
-    renderer.gammaInput = true;
-    renderer.gammaOutput = true;
+    renderer.setClearColor( 0x222222, 1 );
+    //renderer.gammaInput = true;
+    //renderer.gammaOutput = true;
 
     renderer.setSize( window.innerWidth, window.innerHeight );
     container = document.getElementById("container");
@@ -100,7 +102,7 @@ function init() {
 
     scene = new THREE.Scene();
     //scene.fog = new THREE.FogExp2( 0x505050, 0.0025 );
-    scene.fog = new THREE.Fog( 0x505050, 200, 1300 );
+    //scene.fog = new THREE.Fog( 0x505050, 200, 1300 );
     //scene.matrixAutoUpdate = false;
 
     projector = new THREE.Projector();
@@ -143,19 +145,11 @@ function init() {
 
     targetList.push(ground);*/
 
-    terrain = new TERRAIN.Generate(scene, 256, 1100, 110, 50);
+    terrain = new TERRAIN.Generate(scene, 256, 1100, 120, 50);
     terrain.init();
-    targetList.push(terrain.terrain);
+    targetList.push(terrain.mesh);
 
-    var t = new THREE.Mesh(new THREE.CubeGeometry( 5, 50, 5 ), matBox2);
-    scene.add(t);
-    t.position.set(-550, 0, 550);
-    t.position.y = terrain.getPos(-550, 550)+25;
-
-    var t2 = new THREE.Mesh(new THREE.CubeGeometry( 5, 50, 5 ), matBox1);
-    scene.add(t2);
-    t2.position.set(550, 0, -550);
-    t2.position.y = terrain.getPos(550, -550)+25;
+    
 
     content = new THREE.Object3D();
     scene.add(content);
@@ -220,11 +214,11 @@ function newMesh(s){
     ar.position.y =m2.position.y
     m.add( ar );
 
-    /*var shad = new THREE.Mesh(geoPlane, tShadow );
+    var shad = new THREE.Mesh(geoPlane, tShadow );
     shad.scale.set(s*4, s*4, s*4);
     shad.rotation.x =  - 90 * ToRad;
     
-    m.add(shad);*/
+    m.add(shad);
 
     var sprite = new THREE.Sprite( mat3 );
     sprite.scale.set(s*6, s*6, 1.0);
@@ -278,7 +272,8 @@ RvoWorker.onmessage = function(e) {
             p =  e.data.pos[i];
             meshs[i].position.x = p[0];
             meshs[i].position.z = p[1];
-            meshs[i].position.y = terrain.getPos(p[0], p[1]);
+            meshs[i].position.y = terrain.getZ(p[0], p[1]);
+
             meshs[i].rotation.y = e.data.rot[i];
         }
         workerInfo = e.data.infos;
@@ -290,7 +285,6 @@ RvoWorker.onmessage = function(e) {
     }
 
     delete e.data;
-
 }
 
 //-----------------------------------------------------
@@ -433,7 +427,7 @@ function simpleGlow(n){
         var ctx = canvas.getContext( '2d' );
         var grd=ctx.createRadialGradient(32,32,0,32,32,20);
         if(n===0){
-            grd.addColorStop(0,"white");
+            grd.addColorStop(0,"#606060");
             grd.addColorStop(1,"black");
         } else {
             grd.addColorStop(0,"black");

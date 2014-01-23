@@ -8,6 +8,7 @@ TERRAIN.Generate = function( target, size, Tsize, maxHeight,  seaLevel ){
     this.data = null;
     this.geometry = null;
     this.mesh = null;
+    this.mesh2 = null;
     this.size = size || 64;
     this.Tsize = Tsize || 256;
     this.terrain = null;
@@ -16,6 +17,19 @@ TERRAIN.Generate = function( target, size, Tsize, maxHeight,  seaLevel ){
     this.scaleH = 3
     this.maxY = maxHeight || 100;
     this.withUnderWater = false;
+    this.rng = new TERRAIN.Prng();
+
+    
+    this.area = this.size * this.size;
+    this.pixelArea = this.area * 4;
+
+
+    this.material = null;
+    this.customUniforms =null;
+
+    this.canvas = null;
+    this.context =null;
+    this.imgData =null;
 
     this.colors = [0x505050, 0x707050, 0x909050, 0xAAAA50, 0xFFFF50];
 }
@@ -27,142 +41,180 @@ TERRAIN.Generate.prototype = {
 
     },
     init:function () {
-        var canvas = document.createElement( 'canvas' );
-        canvas.width = this.size;
-        canvas.height = this.size;
-        var context = canvas.getContext( '2d' );
 
-        var s2 = this.size
+    	// base geometry
+    	this.geometry = new THREE.PlaneGeometry(this.Tsize, this.Tsize, this.size-1, this.size-1);
+    	this.geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - 90 * TERRAIN.ToRad ) );
+        this.geometry.applyMatrix( new THREE.Matrix4().makeRotationY( - 90 * TERRAIN.ToRad ) );
 
-        var imgData = context.getImageData(0,0,s2,s2);
-        var area = this.size * this.size;
-        this.data = new Float32Array( area );
-        for ( var i = 0; i < area; i ++ ) {
+        this.canvas = document.createElement( 'canvas' );
+        this.canvas.width = this.size;
+        this.canvas.height = this.size;
+        this.context = this.canvas.getContext( '2d' );
+        this.imgData = this.context.createImageData(this.size,this.size);//this.context.getImageData(0,0,this.size,this.size);
+
+        // y data
+        this.data = new Float32Array( this.area );
+        for ( var i = 0; i < this.area; i ++ ) {
             this.data[i] = 0
         }
 
-        var fNoise;
-        var aPixels = imgData.data;
+        this.test();
+        
 
-        //var Prng;
-        var g = new TERRAIN.Prng();//.seed = 282;
-        g.seed = 282;
-        PerlinSimplex.setRng(g);
-        //PerlinSimplex.noiseDetail(3,.5);
-        PerlinSimplex.noiseDetail(3,0.3);
+    },
+    test:function () {
+
+    	this.noize();
+    	this.makeMaterial();
+
+        this.build();
+    },
+    noize:function () {
+    	var fNoise;
+        this.rng.seed = 282;
+        PerlinSimplex.setRng( this.rng );
+        PerlinSimplex.noiseDetail(3,0.5);
         var complex = .02;//0422;
         var zz = Math.random()*100;
-        var j = 0;
+        
         var ii, x, y, xx, yy, pz;
+        var j = 0;
 
 
 
-        for (i = 0, n=aPixels.length; i < n; i += 4) {
+        for (i = 0; i < this.pixelArea; i += 4) {
             ii = Math.floor(i/4);
             x = ii%this.size;
-            y = Math.floor(ii/s2);
+            y = Math.floor(ii/this.size);
             xx = 0+x*complex;
             yy = 0+y*complex;
             fNoise = Math.floor(PerlinSimplex.noise(xx,yy,zz)*256);
-            //pz =  Math.floor((this.maxY * fNoise/255) - this.seaLevel);
-            pz =  ((this.maxY * fNoise/255) - this.seaLevel);
+
+            // update image
+            //this.imgData.data[i+0] = this.imgData.data[i+1] =this.imgData.data[i+2] = fNoise;
+            //this.imgData.data[i+3] = 255;
+
+            pz =  Math.floor((this.maxY * fNoise/255) - this.seaLevel);
+            //pz =  ((this.maxY * fNoise/255) - this.seaLevel);
+
+            this.imgData.data[i+0] = this.imgData.data[i+1] =this.imgData.data[i+2] = fNoise;
+            this.imgData.data[i+3] = 255;
+
+
+
+
             // no under water
             if(!this.withUnderWater)if(pz<0) pz = 0
 
             this.data[j++] = pz;
         }
 
-        this.build();
+        this.context.putImageData(this.imgData,0,0);
     },
-    
-    /*initImage:function (img) {
-        var canvas = document.createElement( 'canvas' );
-        canvas.width = this.size;
-        canvas.height = this.size;
-        var context = canvas.getContext( '2d' );
 
-        var area = this.size * this.size
-        this.data = new Float32Array( area );
-        context.drawImage(img,0,0);
-        for ( var i = 0; i < area; i ++ ) {
-            this.data[i] = 0
-        }
 
-        var imgd = context.getImageData(0, 0, this.size, this.size);
-        var pix = imgd.data;
-
-        var j=0;
-        for (var i = 0, n = pix.length; i < n; i += (4)) {
-            var all = pix[i]+pix[i+1]+pix[i+2];
-            this.data[j++] = all/30;
-        }
-
-        this.build();
-    },*/
-    getPos:function (z, x) {
+    getZ:function (z, x) {
         var colx =Math.floor((x / this.Tsize + .5) * ( this.size));
         var colz =Math.floor((-z / this.Tsize + .5) * ( this.size));
-        //var colx =((x / this.Tsize + .5) * ( this.size));
-        //var colz =((-z / this.Tsize + .5) * ( this.size));
-        //var mz = Math.floor(colz/this.Tsize);
-        //var pix = Math.floor(mz*this.Tsize+colx);
         var pix = Math.floor(((colz-1)*this.size)+colx);
-        y = this.data[pix-1];
+        return this.data[pix-1];
+    },
+    makeMaterial:function(){
 
-        return y;
+		// texture used to generate "bumpiness"
+		//var bumpTexture = new THREE.ImageUtils.loadTexture( 'images/bone.jpg' );
+		var bumpTexture = new THREE.Texture(this.canvas);
+        bumpTexture.needsUpdate = true;
+		bumpTexture.wrapS = bumpTexture.wrapT = THREE.RepeatWrapping; 
+		// magnitude of normal displacement
+		var bumpScale   =  (this.maxY+this.seaLevel)*0.67//*100)/255)//Math.floor(((this.maxY)/255)*100);//this.maxY+ this.seaLevel// 255//Math.floor((this.maxY ) - this.seaLevel);//255.0;
+		
+		var oceanTexture = new THREE.ImageUtils.loadTexture( 'images/rock-512.jpg' );
+		oceanTexture.wrapS = oceanTexture.wrapT = THREE.RepeatWrapping; 
+		
+		var sandyTexture = new THREE.ImageUtils.loadTexture( 'images/grass-512.jpg' );
+		sandyTexture.wrapS = sandyTexture.wrapT = THREE.RepeatWrapping; 
+		
+		var grassTexture = new THREE.ImageUtils.loadTexture( 'images/grass1.jpg' );
+		grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping; 
+		
+		var rockyTexture = new THREE.ImageUtils.loadTexture( 'images/grass2.jpg' );
+		rockyTexture.wrapS = rockyTexture.wrapT = THREE.RepeatWrapping; 
+		
+		var snowyTexture = new THREE.ImageUtils.loadTexture( 'images/rock.jpg' );
+		snowyTexture.wrapS = snowyTexture.wrapT = THREE.RepeatWrapping; 
+
+		
+		// use "this." to create global object
+		this.customUniforms = {
+			bumpTexture:	{ type: "t", value: bumpTexture },
+			bumpScale:	    { type: "f", value: bumpScale },
+			oceanTexture:	{ type: "t", value: oceanTexture },
+			sandyTexture:	{ type: "t", value: sandyTexture },
+			grassTexture:	{ type: "t", value: grassTexture },
+			rockyTexture:	{ type: "t", value: rockyTexture },
+			snowyTexture:	{ type: "t", value: snowyTexture },
+		};
+		
+		// create custom material from the shader code above
+		//   that is within specially labelled script tags
+		this.material = new THREE.ShaderMaterial( 
+		{
+		    uniforms: this.customUniforms,
+			vertexShader: TERRAIN.Vshader ,
+			fragmentShader: TERRAIN.Fshader//,
+			 //side: THREE.FrontSide,
+			 //vertexColors: THREE.VertexColors
+			//transparent: true
+			// side: THREE.DoubleSide
+		});
+
     },
     build:function () {
-        this.geometry = new THREE.PlaneGeometry(this.Tsize, this.Tsize, this.size-1, this.size-1);
-        var i = this.geometry.vertices.length;
+
+       /* var i = this.geometry.vertices.length;
         while(i--){
-            this.geometry.vertices[i].z = this.data[i];
+            this.geometry.vertices[i].y = this.data[i];
         }
 
-        /*console.log(this.geometry.vertices.length/this.size)
-
-        var colx =Math.floor((550 / this.Tsize+ .5) * ( this.size ));
-        var colz =Math.floor((550 / this.Tsize + .5) * ( this.size));
-        var pix = Math.floor(((colz-1)*this.size)+colx);
-        console.log(colx, colz,  pix-1, this.geometry.vertices.length)
-
-        console.log("0=", this.geometry.vertices[0].x, this.geometry.vertices[0].y, this.geometry.vertices[0].z);
-        console.log("0=", this.getPos(this.geometry.vertices[0].x, this.geometry.vertices[0].y));
-        
-        var p0 = this.geometry.vertices.length-1
-
-        console.log("300=", this.geometry.vertices[p0].x, this.geometry.vertices[p0].y, this.geometry.vertices[p0].z);
-        console.log("300=", this.getPos(this.geometry.vertices[p0].x, this.geometry.vertices[p0].y));
-
-*/
-
         THREE.GeometryUtils.triangulateQuads( this.geometry );
-        //this.geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
-        //this.geometry.applyMatrix( new THREE.Matrix4().makeRotationY( - Math.PI / 2 ) );
 
-        this.geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - 90 * TERRAIN.ToRad ) );
-        this.geometry.applyMatrix( new THREE.Matrix4().makeRotationY( - 90 * TERRAIN.ToRad ) );
-
-        // Calculate per-vertex normals.
         this.geometry.computeFaceNormals();
         this.geometry.computeVertexNormals();
         this.geometry.verticesNeedUpdate = true;
         this.geometry.elementsNeedUpdate = true;
         this.geometry.normalsNeedUpdate  = true;
+        */
+        
 
-        var material = new THREE.MeshBasicMaterial( {
+        /*var material = new THREE.MeshBasicMaterial( {
             color: 0x448844, shading: THREE.FlatShading,
             wireframe: true, wireframeLinewidth: 2,
-            transparent: true } );
+        } );*/
 
-        this.mesh = new THREE.Mesh( this.geometry, material );
 
-        this.meshToVBO();
-    },
+        if(this.mesh){
+        	this.mesh.material = this.material
+        	//this.target.remove( this.mesh );
+        	//this.mesh.geometry.dispose();
+        } else{
+
+    	var geo = THREE.BufferGeometryUtils.fromGeometry( this.geometry );
+        this.mesh = new THREE.Mesh( geo, this.material );
+        this.mesh.position.y = -this.seaLevel
+        this.target.add( this.mesh );
+        }
+
+        //this.meshToVBO();
+    }/*,
     meshToVBO:function () {
-        var triangles = this.mesh.geometry.faces.length;
+    	//var tmp = this.mesh.clone();
+    	//var tgeo = this.geometry;
+        var triangles = this.geometry.faces.length;
 
-        var geometry = new THREE.BufferGeometry();
-        geometry.attributes = {
+        var geo = new THREE.BufferGeometry();
+        geo.attributes = {
             index: {
                 itemSize: 1,
                 array: new Int16Array( triangles * 3 ),
@@ -185,22 +237,24 @@ TERRAIN.Generate.prototype = {
             }
         }
 
+        
+
         var chunkSize = 2000;
 
-        var indices = geometry.attributes.index.array;
+        var indices = geo.attributes.index.array;
 
         for ( var i = 0; i < indices.length; i ++ ) {
           indices[ i ] = i % ( 3 * chunkSize );
         }
-                    
-        var positions = geometry.attributes.position.array;
-        var normals = geometry.attributes.normal.array;
-        var colors = geometry.attributes.color.array;
+   
+        var positions = geo.attributes.position.array;
+        var normals = geo.attributes.normal.array;
+        var colors = geo.attributes.color.array;
 
         var color = new THREE.Color();
 
-        var faces = this.mesh.geometry.faces;
-        var verts = this.mesh.geometry.vertices;
+        var faces = this.geometry.faces;
+        var verts = this.geometry.vertices;
 
         for ( var i = 0; i < triangles; i++ ) {
 
@@ -222,7 +276,7 @@ TERRAIN.Generate.prototype = {
 
            //
 
-            var vn = this.mesh.geometry.faces[ i ].vertexNormals
+            var vn = this.geometry.faces[ i ].vertexNormals
 
             normals[ i * 9 ]     = vn[ 0 ].x;
             normals[ i * 9 + 1 ] = vn[ 0 ].y;
@@ -275,7 +329,7 @@ TERRAIN.Generate.prototype = {
 
         //
 
-        geometry.offsets = [];
+        geo.offsets = [];
 
         var offsets = triangles / chunkSize;
 
@@ -287,22 +341,28 @@ TERRAIN.Generate.prototype = {
                 count: Math.min( triangles - ( i * chunkSize ), chunkSize ) * 3
             };
 
-            geometry.offsets.push( offset );
+            geo.offsets.push( offset );
 
         }
                     
-        geometry.computeBoundingSphere();
+        //geometry.computeBoundingSphere();
 
         //
 
         var material = new THREE.MeshPhongMaterial( {
             color: 0x909090, ambient: 0x303030, specular: 0x808080, shininess: 20,
-            side: THREE.FrontSide, vertexColors: THREE.VertexColors//, depthWrite: false
+            side: THREE.FrontSide, vertexColors: THREE.VertexColors//, depthWrite: true, depthTest:true, blending: THREE.MultiplyBlending, transparent:true
         } );
 
-        this.terrain = new THREE.Mesh( geometry, material );
-        this.target.add( this.terrain );
-    }
+        if(this.mesh2){
+        	this.target.remove( this.mesh2 );
+        	this.mesh2.geometry.dispose();
+        }
+
+        this.mesh2 = new THREE.Mesh( geo, material );
+        this.target.add( this.mesh2 );
+        this.mesh2.position.y =0.1
+    }*/
 
 
 
@@ -329,3 +389,33 @@ TERRAIN.Prng = function() {
     };
     return that;
 };
+
+TERRAIN.Vshader = [
+"uniform sampler2D bumpTexture;",
+"uniform float bumpScale;",
+"varying float vAmount;",
+"varying vec2 vUV;",
+"void main(){ ",
+"	vUV = uv;",
+"	vec4 bumpData = texture2D( bumpTexture, uv );",
+"	vAmount = bumpData.r;",
+"    vec3 newPosition = position + normal * bumpScale * vAmount;",
+"	gl_Position = projectionMatrix * modelViewMatrix * vec4( newPosition, 1.0 ); }"
+].join("\n");
+
+TERRAIN.Fshader = [
+"uniform sampler2D oceanTexture;",
+"uniform sampler2D sandyTexture;",
+"uniform sampler2D grassTexture;",
+"uniform sampler2D rockyTexture;",
+"uniform sampler2D snowyTexture;",
+"varying vec2 vUV;",
+"varying float vAmount;",
+"void main() {",
+"	vec4 water = (smoothstep(0.01, 0.25, vAmount) - smoothstep(0.24, 0.26, vAmount)) * texture2D( oceanTexture, vUV * 20.0 );",
+"	vec4 sandy = (smoothstep(0.24, 0.27, vAmount) - smoothstep(0.28, 0.31, vAmount)) * texture2D( sandyTexture, vUV * 20.0 );",
+"	vec4 grass = (smoothstep(0.28, 0.32, vAmount) - smoothstep(0.35, 0.40, vAmount)) * texture2D( grassTexture, vUV * 20.0 );",
+"	vec4 rocky = (smoothstep(0.30, 0.50, vAmount) - smoothstep(0.40, 0.70, vAmount)) * texture2D( rockyTexture, vUV * 20.0 );",
+"	vec4 snowy = (smoothstep(0.50, 0.65, vAmount))                                   * texture2D( snowyTexture, vUV * 20.0 );",
+"	gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) + water + sandy + grass + rocky + snowy; }"
+].join("\n");

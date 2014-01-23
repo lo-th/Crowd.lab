@@ -197,9 +197,9 @@ function populate() {
 
     simulator.processObstacles();
 
-    self.postMessage({tell:"ADD", type:"obstacle", pos:[0,15,175], size:[100, 30, 250] });
-    self.postMessage({tell:"ADD", type:"obstacle", pos:[0,15,-175], size:[100, 30, 250] });
-    self.postMessage({tell:"ADD", type:"obstacle", pos:[0,15,0], size:[40, 30, 40] });
+    self.postMessage({tell:"ADD", type:"obstacle", pos:[0,0,175], size:[100, 100, 250] });
+    self.postMessage({tell:"ADD", type:"obstacle", pos:[0,0,-175], size:[100, 100, 250] });
+    self.postMessage({tell:"ADD", type:"obstacle", pos:[0,0,0], size:[40, 100, 40] });
     
 	
     nAgent = simulator.getNumAgents();
