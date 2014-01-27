@@ -22,6 +22,11 @@ THREE.ShaderTerrain = {
 			THREE.UniformsLib[ "shadowmap" ],
 
 			{
+			"oceanTexture"  : { type: "t", value: null },
+			"sandyTexture"  : { type: "t", value: null },
+			"grassTexture"  : { type: "t", value: null },
+			"rockyTexture"  : { type: "t", value: null },
+			"snowyTexture"  : { type: "t", value: null },
 
 			"enableDiffuse1"  : { type: "i", value: 0 },
 			"enableDiffuse2"  : { type: "i", value: 0 },
@@ -46,6 +51,8 @@ THREE.ShaderTerrain = {
 			"shininess": { type: "f", value: 30 },
 			"opacity": { type: "f", value: 1 },
 
+			//"vAmount": { type: "f", value: 30 },
+
 			"uRepeatBase"    : { type: "v2", value: new THREE.Vector2( 1, 1 ) },
 			"uRepeatOverlay" : { type: "v2", value: new THREE.Vector2( 1, 1 ) },
 
@@ -56,6 +63,13 @@ THREE.ShaderTerrain = {
 		] ),
 
 		fragmentShader: [
+		    "uniform sampler2D oceanTexture;",
+			"uniform sampler2D sandyTexture;",
+			"uniform sampler2D grassTexture;",
+			"uniform sampler2D rockyTexture;",
+			"uniform sampler2D snowyTexture;",
+
+			"varying float vAmount;",
 
 			"uniform vec3 ambient;",
 			"uniform vec3 diffuse;",
@@ -129,6 +143,12 @@ THREE.ShaderTerrain = {
 				"normalTex.xy *= uNormalScale;",
 				"normalTex = normalize( normalTex );",
 
+				"vec4 water = (smoothstep(0.01, 0.25, vAmount) - smoothstep(0.24, 0.26, vAmount)) * texture2D( oceanTexture, uvOverlay );",
+		        "vec4 sandy = (smoothstep(0.24, 0.27, vAmount) - smoothstep(0.28, 0.31, vAmount)) * texture2D( sandyTexture, uvOverlay );", //vec2( 20,20 ) * vUv + uOffset
+		        "vec4 grass = (smoothstep(0.28, 0.32, vAmount) - smoothstep(0.35, 0.40, vAmount)) * texture2D( grassTexture, uvOverlay );",
+		        "vec4 rocky = (smoothstep(0.30, 0.50, vAmount) - smoothstep(0.40, 0.70, vAmount)) * texture2D( rockyTexture, uvOverlay );",
+		        "vec4 snowy = (smoothstep(0.50, 0.65, vAmount))                                   * texture2D( snowyTexture, uvOverlay );",
+
 				"if( enableDiffuse1 && enableDiffuse2 ) {",
 
 					"vec4 colDiffuse1 = texture2D( tDiffuse1, uvOverlay );",
@@ -141,7 +161,9 @@ THREE.ShaderTerrain = {
 
 					"#endif",
 
-					"gl_FragColor = gl_FragColor * mix ( colDiffuse1, colDiffuse2, 1.0 - texture2D( tDisplacement, uvBase ) );",
+					//"gl_FragColor = gl_FragColor * mix ( colDiffuse1, colDiffuse2, 1.0 - texture2D( tDisplacement, uvBase ) )",
+					"gl_FragColor = gl_FragColor * mix ( colDiffuse1, colDiffuse2, 1.0 - texture2D( tDisplacement, uvBase ) )+ water + sandy + grass + rocky + snowy;",
+					//"gl_FragColor = vec4( gl_FragColor.xyz, 1.0 )+ water + sandy + grass + rocky + snowy;",
 
 				" } else if( enableDiffuse1 ) {",
 
@@ -288,8 +310,25 @@ THREE.ShaderTerrain = {
 
 				"#endif",
 
+				/*"vec4 water = (smoothstep(0.01, 0.25, vAmount) - smoothstep(0.24, 0.26, vAmount)) * texture2D( oceanTexture, vUv * 20.0 );",
+		        "vec4 sandy = (smoothstep(0.24, 0.27, vAmount) - smoothstep(0.28, 0.31, vAmount)) * texture2D( sandyTexture, vUv * 20.0 );",
+		        "vec4 grass = (smoothstep(0.28, 0.32, vAmount) - smoothstep(0.35, 0.40, vAmount)) * texture2D( grassTexture, vUv * 20.0 );",
+		        "vec4 rocky = (smoothstep(0.30, 0.50, vAmount) - smoothstep(0.40, 0.70, vAmount)) * texture2D( rockyTexture, vUv * 20.0 );",
+		        "vec4 snowy = (smoothstep(0.50, 0.65, vAmount))                                   * texture2D( snowyTexture, vUv * 20.0 );",*/
+
+		        //"vec2 uvOverlay = uRepeatOverlay * vUv + uOffset;",
+
+		        /*"vec4 water = (smoothstep(0.01, 0.25, vAmount) - smoothstep(0.24, 0.26, vAmount)) * texture2D( oceanTexture, uvOverlay );",
+		        "vec4 sandy = (smoothstep(0.24, 0.27, vAmount) - smoothstep(0.28, 0.31, vAmount)) * texture2D( sandyTexture, uvOverlay );", //vec2( 20,20 ) * vUv + uOffset
+		        "vec4 grass = (smoothstep(0.28, 0.32, vAmount) - smoothstep(0.35, 0.40, vAmount)) * texture2D( grassTexture, uvOverlay );",
+		        "vec4 rocky = (smoothstep(0.30, 0.50, vAmount) - smoothstep(0.40, 0.70, vAmount)) * texture2D( rockyTexture, uvOverlay );",
+		        "vec4 snowy = (smoothstep(0.50, 0.65, vAmount))                                   * texture2D( snowyTexture, uvOverlay );",*/
+
 				//"gl_FragColor.xyz = gl_FragColor.xyz * ( totalDiffuse + ambientLightColor * ambient) + totalSpecular;",
 				"gl_FragColor.xyz = gl_FragColor.xyz * ( totalDiffuse + ambientLightColor * ambient + totalSpecular );",
+				//"gl_FragColor.xyz = gl_FragColor.xyz * ( totalDiffuse + ambientLightColor * ambient + totalSpecular );",
+				//"vec4 finalTex       = (totalDiffuse + ambientLightColor * ambient + totalSpecular);",
+				//"gl_FragColor = vec4( gl_FragColor.xyz, 1.0 )+ water + sandy + grass + rocky + snowy;",
 
 				THREE.ShaderChunk[ "shadowmap_fragment" ],
 				THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
@@ -300,6 +339,7 @@ THREE.ShaderTerrain = {
 		].join("\n"),
 
 		vertexShader: [
+		    "varying float vAmount;",
 
 			"attribute vec4 tangent;",
 
@@ -338,6 +378,9 @@ THREE.ShaderTerrain = {
 				// texture coordinates
 
 				"vUv = uv;",
+
+				'vec4 bumpData = texture2D( tDisplacement, uv );',
+		        'vAmount = bumpData.r;',
 
 				"vec2 uvBase = uv * uRepeatBase;",
 

@@ -8,8 +8,12 @@
  */
 
 THREE.ShaderLib['water'] = {
+	uniforms: THREE.UniformsUtils.merge( [
 
-	uniforms: { "normalSampler":	{ type: "t", value: null },
+			THREE.UniformsLib[ "fog" ],
+
+	//uniforms:
+	 { "normalSampler":	{ type: "t", value: null },
 				"mirrorSampler":	{ type: "t", value: null },
 				"alpha":			{ type: "f", value: 1.0 },
 				"time":				{ type: "f", value: 0.0 },
@@ -19,7 +23,7 @@ THREE.ShaderLib['water'] = {
 				"sunDirection":		{ type: "v3", value: new THREE.Vector3( 0.70707, 0.70707, 0 ) },
 				"eye":				{ type: "v3", value: new THREE.Vector3( 0, 0, 0 ) },
 				"waterColor":		{ type: "c", value: new THREE.Color( 0x555555 ) }
-	},
+	}] ),
 
 	vertexShader: [
 		'uniform mat4 textureMatrix;',
@@ -73,6 +77,8 @@ THREE.ShaderLib['water'] = {
 		'	specularColor += pow( direction, shiny ) * sunColor * spec;',
 		'	diffuseColor += max( dot( sunDirection, surfaceNormal ), 0.0 ) * sunColor * diffuse;',
 		'}',
+
+		THREE.ShaderChunk[ "fog_pars_fragment" ],
 		
 		'void main()',
 		'{',
@@ -97,6 +103,7 @@ THREE.ShaderLib['water'] = {
 		'	vec3 scatter = max( 0.0, dot( surfaceNormal, eyeDirection ) ) * waterColor;',
 		'	vec3 albedo = mix( sunColor * diffuseLight * 0.3 + scatter, ( vec3( 0.1 ) + reflectionSample * 0.9 + reflectionSample * specularLight ), reflectance );',
 		'	gl_FragColor = vec4( albedo, alpha );',
+		THREE.ShaderChunk[ "fog_fragment" ],
 		'}'
 	].join('\n')
 
@@ -162,7 +169,8 @@ THREE.Water = function ( renderer, camera, scene, options ) {
 		fragmentShader: mirrorShader.fragmentShader, 
 		vertexShader: mirrorShader.vertexShader, 
 		uniforms: mirrorUniforms,
-		transparent: true
+		transparent: true,
+		fog: true
 	} );
 
 	this.material.uniforms.mirrorSampler.value = this.texture;

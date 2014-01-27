@@ -5,6 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=11" />
+<meta http-equiv="X-UA-Compatible" content="chrome=1">
 
 <style>
     body {
@@ -35,14 +36,22 @@
     }
 </style>
 
-<script src="js/three.min.js"></script>
-<script src="js/PerlinSimplex.js"></script>
+<script src="js/three.js"></script>
 <script src="js/BufferGeometryUtils.js"></script>
 <script src="js/Terrain.js"></script>
-<script src="js/ShaderTerrain.js"></script>
 
-<script src="js/Mirror.js"></script>
-<script src="js/WaterShader.js"></script>
+<script src="js/shaders/Mirror.js"></script>
+<script src="js/shaders/WaterShader.js"></script>
+<script src="js/shaders/ShaderTerrain.js"></script>
+<script src="js/shaders/ShaderNoise.js"></script>
+<script src="js/shaders/LuminosityShader.js"></script>
+<script src="js/shaders/NormalMapShader.js"></script>
+
+<!--<script src="js/shaders/BleachBypassShader.js"></script>
+<script src="js/shaders/ConvolutionShader.js"></script>
+<script src="js/shaders/CopyShader.js"></script>
+<script src="js/shaders/HorizontalTiltShiftShader.js"></script>
+<script src="js/shaders/VerticalTiltShiftShader.js"></script>-->
 
 </head>
 <body>
@@ -54,7 +63,8 @@
     <input type="button" value="Timer on" onClick=changeTimer() id='timer' >
     <!--radius1: <input type="number" name="r1" min="1" max="100" value="8"  id='R1' class='imp'>
     radius2: <input type="number" name="r2" min="1" max="100" value="6"  id='R2' class='imp'>-->
-    <input type="button" value="Terrain" onClick=terrain.test()>
+    <input type="button" value="Morph" onClick=terrain.anim()>
+    <input type="button" value="Night" onClick=terrain.night()>
     <input type="button" value="Water off" onClick=addWater()  id='water'>
 </div>
 <div id='info'></div>
@@ -62,7 +72,7 @@
 <script type="text/javascript">
 
 // three.js var
-var camera, scene, light, renderer, container, center, projector, content;
+var camera, scene, directionalLight, pointLight, ambientLight, renderer, container, center, projector, content;
 var meshs = [];
 var geoBox, geoSphere, geoPlane;
 var matBox1, matSphere1, matSphere2, matGround, matBox2, matBox3, glow1, glow2, tShadow;
@@ -72,6 +82,8 @@ var terrain;
 var water;
 var glowTexture;
 
+var clock = new THREE.Clock();
+
 var camPos = { horizontal: 40, vertical: 80, distance: 600, automove: false };
 var mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, tx:0, ty:0, down:false, over:false, moving:true };
 
@@ -80,8 +92,8 @@ var timer, delay, timerStep, t01, ms, maxms = 0;
 var ToRad = Math.PI / 180;
 var workerInfo = [0,0];
 
-var hh = 1100;
-var ww = 1100;
+//var hh = 1100;
+var ww = 2000;
 var radius1 = 8;
 var radius2 = 6;
 var initNext = null;
@@ -101,8 +113,8 @@ function init() {
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.autoClearColor = false;
     //renderer.setClearColor( 0x222222, 1 );
-    //renderer.gammaInput = true;
-    //renderer.gammaOutput = true;
+    renderer.gammaInput = true;
+    renderer.gammaOutput = true;
     
     container = document.getElementById("container");
     container.appendChild( renderer.domElement );
@@ -110,23 +122,29 @@ function init() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 20000 );
-    camera.position.set( 0, 100, 1000 );
+    //camera.position.set( 0, -600, -800 );
     center = new THREE.Vector3();
     moveCamera();
 
     
     //scene.fog = new THREE.FogExp2( 0xd7ccb0, 0.0025 );
-    //scene.fog = new THREE.Fog( 0xd7ccb0, 1000, 5000 );
+    scene.fog = new THREE.Fog( 0xd7ccb0, 200, 1500 );
     //scene.matrixAutoUpdate = false;
 
     projector = new THREE.Projector();
 
-    scene.add( new THREE.AmbientLight( 0x383838 ) );
+    ambientLight = new THREE.AmbientLight(  0x111111 )
+    scene.add( ambientLight );
 
-    light = new THREE.DirectionalLight( 0xffffee , 1 );
-    light.position.set( 0.3, 1, 0.5 );
-    //light.position.set( - 1, 0.4, - 1 );
-    scene.add( light );
+    directionalLight = new THREE.DirectionalLight( 0xffffee , 1.5 );
+    directionalLight.position.set( 0.3, 1, 0.5 );
+    scene.add( directionalLight );
+
+    pointLight = new THREE.PointLight( 0xffffff, 1.5);
+    pointLight.position.set(0, 500, 0);
+    scene.add( pointLight );
+    
+    
 
     matSphere1 = new THREE.MeshLambertMaterial( { color: 0x3d9970, name:'sph' } );
     matSphere2 = new THREE.MeshLambertMaterial( { color: 0xff851b, name:'sph' } );
@@ -146,7 +164,11 @@ function init() {
     glow1 = new THREE.SpriteMaterial({ map: glowTexture, color: 0x3d9970, transparent: false, blending: THREE.AdditiveBlending, useScreenCoordinates: false , depthTest:false,  depthWrite: false});
     glow2 = new THREE.SpriteMaterial({ map: glowTexture, color: 0xff851b, transparent: false, blending: THREE.AdditiveBlending, useScreenCoordinates: false , depthTest:false,  depthWrite: false});//
 
-    tShadow = new THREE.MeshBasicMaterial({ ambient: 0xFFFFFF, map: glowTexture2, color: 0xFFFFFF, transparent: true, blending: THREE.MultiplyBlending , fog:false, depthWrite:false});//, depthWrite: false depthTest 
+    //var sh = 
+    glowTexture2.premultiplyAlpha = true;
+    glowTexture2.needsUpdate = true;
+
+    tShadow = new THREE.MeshBasicMaterial({ map: glowTexture2,transparent: true, opacity: 1, fog:true, depthWrite:false, lights:false});//, depthWrite: false depthTest 
 
 
 
@@ -155,18 +177,13 @@ function init() {
     ground.visible = false;
     scene.add(ground);
     targetList.push(ground);
-    /*var helper = new THREE.GridHelper( ww/2, ww/32 );
-    helper.setColors( 0x000000, 0x404040 );
-    helper.rotation.x = -90 * ToRad;
-    ground.add( helper );
 
-    targetList.push(ground);*/
 
     terrain = new TERRAIN.Generate(scene, 256, ww, 120, 50);
-    terrain.init();
+    terrain.init(window.innerWidth, window.innerHeight);
     
 
-   // 
+   
 
     // load skybox
 
@@ -220,7 +237,7 @@ function init() {
 function addWater() {
     var base = document.getElementById("water");
     if(!water){
-        water = new TERRAIN.Water(renderer, camera, scene, light);
+        water = new TERRAIN.Water(renderer, camera, scene);
         base.value = "Water on";
     } else {
         water.clear()
@@ -305,7 +322,7 @@ function newMesh(s){
 
 function obsMesh(p, s){
     var m = new THREE.Mesh(geoBox, matBox3);
-    m.scale.set( s.x, s.y, s.z );
+    m.scale.set( s.x, s.y*2, s.z );
     m.position.copy(p);
     //m.visible = false;
     content.add(m);
@@ -371,7 +388,12 @@ function loop() {
 
     t01 = Date.now();
 
+    var delta = clock.getDelta();
+    
+    terrain.update(delta);
+
     if(water)water.render();
+
     renderer.render( scene, camera );
 
     // fps calc
@@ -507,8 +529,11 @@ function simpleGlow(n){
             grd.addColorStop(0,"#606060");
             grd.addColorStop(1,"black");
         } else {
-            grd.addColorStop(0,"black");
-            grd.addColorStop(1,"white");
+           // grd.addColorStop(0,"black");
+            //grd.addColorStop(1,"white");
+
+            grd.addColorStop(0.5,"rgba(0,0,0,1)");
+            grd.addColorStop(1,"rgba(0,0,0,0)");
         }
         ctx.fillStyle = grd;
         ctx.fillRect(0, 0, 64, 64);
