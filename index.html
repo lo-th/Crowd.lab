@@ -118,7 +118,7 @@ function init() {
     //renderer.setClearColor( 0x222222, 1 );
     renderer.gammaInput = true;
     renderer.gammaOutput = true;
-    renderer.shadowMapEnabled = true;
+    renderer.shadowMapEnabled = false;
     
     container = document.getElementById("container");
     container.appendChild( renderer.domElement );
@@ -175,7 +175,7 @@ function init() {
     targetList.push(ground);
 
 
-    terrain = new TERRAIN.Generate(scene, 256, ww, 120, 50);
+    terrain = new TERRAIN.Generate(scene, 256, ww, 120, 36);
     terrain.init(window.innerWidth, window.innerHeight);
     
 
@@ -255,7 +255,7 @@ function initLight() {
     directionalLight.position.multiplyScalar( 600 );
     scene.add( directionalLight );
 
-    directionalLight.castShadow = true;
+    /*directionalLight.castShadow = true;
 
     directionalLight.shadowMapWidth = 1024;
     directionalLight.shadowMapHeight = 1024;
@@ -269,7 +269,7 @@ function initLight() {
 
     directionalLight.shadowCameraFar = 2000;
     directionalLight.shadowBias = -0.0001;
-    directionalLight.shadowDarkness = 0.4;
+    directionalLight.shadowDarkness = 0.4;*/
     //directionalLight.shadowCameraVisible = true;
 
     pointLight = new THREE.PointLight( 0xffffff, 0);
@@ -339,7 +339,7 @@ function newMesh(s){
      //22
 
     m2.scale.set( s, s*0.7, s );
-    m2.position.y = (s*0.7)*0.5;
+    m2.position.y = 1.5+(s*0.7)*0.5;
     //ar.position.z =-s/6
     m.add(m2);
     content.add(m);
@@ -357,7 +357,7 @@ function newMesh(s){
     // fake shadow
 
     var shad = new THREE.Mesh(geoPlane, tShadow );
-    shad.scale.set(s*4, s*4, s*4);
+    shad.scale.set(s*4.5, s*4.5, s*4.5);
     shad.rotation.x =  - 90 * ToRad;
     m.add(shad);
 

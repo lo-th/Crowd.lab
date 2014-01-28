@@ -107,9 +107,10 @@ TERRAIN.Generate.prototype = {
 
         var terrainNoise = THREE.ShaderNoise[ "noise" ];
 
-        this.specularMap = new THREE.WebGLRenderTarget( 512, 512, pars );
+       // this.specularMap = new THREE.WebGLRenderTarget( 512, 512, pars );
+        this.specularMap = new THREE.WebGLRenderTarget( 1024, 1024, pars );
 
-        this.diffuseTexture1 = THREE.ImageUtils.loadTexture( "images/grass2.jpg")//, null, this.loadTextures() );
+        this.diffuseTexture1 = THREE.ImageUtils.loadTexture( "images/grass1.jpg")//, null, this.loadTextures() );
 
         this.applyShader();
             /*function () {
@@ -130,10 +131,10 @@ TERRAIN.Generate.prototype = {
 
         // MAP
 
-        var oceanTexture = new THREE.ImageUtils.loadTexture( 'images/rock-512.jpg' );
+        var oceanTexture = new THREE.ImageUtils.loadTexture( 'images/wetStone.jpg' );
         oceanTexture.wrapS = oceanTexture.wrapT = THREE.RepeatWrapping; 
         
-        var sandyTexture = new THREE.ImageUtils.loadTexture( 'images/grass-512.jpg' );
+        var sandyTexture = new THREE.ImageUtils.loadTexture( 'images/sand.jpg' );
         sandyTexture.wrapS = sandyTexture.wrapT = THREE.RepeatWrapping; 
         
         var grassTexture = new THREE.ImageUtils.loadTexture( 'images/grass1.jpg' );
@@ -142,7 +143,7 @@ TERRAIN.Generate.prototype = {
         var rockyTexture = new THREE.ImageUtils.loadTexture( 'images/grass2.jpg' );
         rockyTexture.wrapS = rockyTexture.wrapT = THREE.RepeatWrapping; 
         
-        var snowyTexture = new THREE.ImageUtils.loadTexture( 'images/rock.jpg' );
+        var snowyTexture = new THREE.ImageUtils.loadTexture( 'images/rock2.jpg' );
         snowyTexture.wrapS = snowyTexture.wrapT = THREE.RepeatWrapping;
 
         // TERRAIN SHADER
@@ -158,7 +159,7 @@ TERRAIN.Generate.prototype = {
         this.uniformsTerrain[ "snowyTexture" ].value = snowyTexture;
 
         this.uniformsTerrain[ "tNormal" ].value = this.normalMap;
-        this.uniformsTerrain[ "uNormalScale" ].value = 10//3.5;
+        this.uniformsTerrain[ "uNormalScale" ].value = 10;//3.5;
 
         this.uniformsTerrain[ "tDisplacement" ].value = this.heightMap;
 
@@ -180,7 +181,7 @@ TERRAIN.Generate.prototype = {
         this.uniformsTerrain[ "uDisplacementScale" ].value = this.maxHeight;
 
         //uniformsTerrain[ "uRepeatOverlay" ].value.set( 6, 6 );
-        this.uniformsTerrain[ "uRepeatOverlay" ].value.set( 6, 6 );
+        this.uniformsTerrain[ "uRepeatOverlay" ].value.set( 18, 18 );
 
         var params = [
                         [ 'heightmap',  terrainNoise.fragmentShader, terrainNoise.vertexShader, this.uniformsNoise, false ],
@@ -320,7 +321,7 @@ TERRAIN.Generate.prototype = {
 
                 this.uniformsNoise[ "offset" ].value.x += delta * 0.05;
 
-                this.uniformsTerrain[ "uOffset" ].value.x = 4 * this.uniformsNoise[ "offset" ].value.x;
+                this.uniformsTerrain[ "uOffset" ].value.x = 12 * this.uniformsNoise[ "offset" ].value.x;//4
 
                 this.quadTarget.material =  this.mlib[ "heightmap" ];
                 renderer.render( this.sceneRenderTarget, this.cameraOrtho, this.heightMap, true );
@@ -362,7 +363,7 @@ TERRAIN.Water = function(Tsize, renderer, camera, scene) {
         textureWidth: 256, 
         textureHeight: 256,
         waterNormals: this.waterNormals,
-        alpha:  0.8,
+        alpha:  0.6,
         sunDirection:  directionalLight.position.normalize(),
         sunColor: 0xffffee,
         waterColor: 0x001e0f,
