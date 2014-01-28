@@ -309,7 +309,7 @@ TERRAIN.Generate.prototype = {
             directionalLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.1, 1.15 );
             pointLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.9, 1.5 );
 
-            sbox.opacity = (0.8-this.lightVal)+0.2;
+            sbox.opacity = (1-(this.lightVal*1.25));
 
             this.uniformsTerrain[ "uNormalScale" ].value = THREE.Math.mapLinear( valNorm, 0, 1, 0.6, 3.5 );
 
@@ -352,7 +352,8 @@ TERRAIN.Generate.prototype = {
 
 // WATER
 
-TERRAIN.Water = function(renderer, camera, scene) {
+TERRAIN.Water = function(Tsize, renderer, camera, scene) {
+    this.Tsize = Tsize || 256;
     this.waterNormals = new THREE.ImageUtils.loadTexture( 'images/water.jpg' );
     this.waterNormals.wrapS = this.waterNormals.wrapT = THREE.RepeatWrapping; 
     //this.waterNormal.format = THREE.RGBFormat;
@@ -369,7 +370,7 @@ TERRAIN.Water = function(renderer, camera, scene) {
         fog: true,
     } );
 
-    this.mirrorMesh = new THREE.Mesh( new THREE.PlaneGeometry(10000, 10000, 10, 10 ),  this.water.material);
+    this.mirrorMesh = new THREE.Mesh( new THREE.PlaneGeometry(this.Tsize, this.Tsize, 10, 10 ),  this.water.material);
     this.mirrorMesh.add( this.water );
     this.mirrorMesh.rotation.x = - Math.PI * 0.5;
     this.mirrorMesh.position.y = -0.1

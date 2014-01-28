@@ -72,7 +72,7 @@
 <script type="text/javascript">
 
 // three.js var
-var camera, scene, renderer, container, center, projector, content;
+var camera, scene, sceneback, renderer, container, center, projector, content;
 var hemiLight, directionalLight, pointLight, ambientLight;
 var meshs = [];
 var geoBox, geoSphere, geoPlane;
@@ -123,6 +123,7 @@ function init() {
     container = document.getElementById("container");
     container.appendChild( renderer.domElement );
 
+    sceneback = new THREE.Scene();
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 20000 );
@@ -207,14 +208,14 @@ function init() {
 
     var skyBox = new THREE.Mesh(new THREE.CubeGeometry( 10000, 10000, 10000 ),  skyBoxMaterial );
     
-    scene.add( skyBox );
+    sceneback.add( skyBox );
 
     sbox = new THREE.MeshBasicMaterial( {  color: 0x000000, transparent: true, opacity:0, depthWrite: false, side: THREE.BackSide } );
     var skyBox2 = new THREE.Mesh(new THREE.CubeGeometry( 8000, 8000, 8000 ),  sbox );
     
-    scene.add( skyBox2 );
+    sceneback.add( skyBox2 );
 
-    
+
     
 
     content = new THREE.Object3D();
@@ -280,7 +281,7 @@ function initLight() {
 function addWater() {
     var base = document.getElementById("water");
     if(!water){
-        water = new TERRAIN.Water(renderer, camera, scene);
+        water = new TERRAIN.Water(ww, renderer, camera, scene);
         base.value = "Water on";
     } else {
         water.clear()
@@ -444,6 +445,8 @@ function loop() {
 
     if(water)water.render();
 
+
+    renderer.render( sceneback, camera )
     renderer.render( scene, camera );
 
     // fps calc
