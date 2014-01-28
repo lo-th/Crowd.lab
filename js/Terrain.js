@@ -226,6 +226,9 @@ TERRAIN.Generate.prototype = {
         this.target.add( this.mesh );
         this.mesh.rotation.x = -Math.PI / 2;
         this.mesh.position.y = -this.seaLevel;
+
+        this.mesh.castShadow = false;
+        this.mesh.receiveShadow = true;
     },
     applyShader:function () {
         var shader = THREE.LuminosityShader;
@@ -292,18 +295,21 @@ TERRAIN.Generate.prototype = {
 
             var time = Date.now() * 0.001;
 
-            var fLow = 0.1, fHigh = 0.8;
+            var fLow = 0.01, fHigh = 0.8;
 
             this.lightVal = THREE.Math.clamp( this.lightVal + 0.5 * delta * this.lightDir, fLow, fHigh );
 
             var valNorm = ( this.lightVal - fLow ) / ( fHigh - fLow );
 
-            scene.fog.color.setHSL( 0.1, 0.5, this.lightVal );//d7ccb0
+            scene.fog.color.setHSL( 43/360, 0.33, this.lightVal-0.03);
 
-            renderer.setClearColor( scene.fog.color, 1 );
+            hemiLight.color.setHSL( 220/360, 0.17, this.lightVal-0.1  );
+            hemiLight.groundColor.setHSL( 43/360, 0.33, this.lightVal-0.03 );
 
             directionalLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.1, 1.15 );
             pointLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.9, 1.5 );
+
+            sbox.opacity = (0.8-this.lightVal)+0.2;
 
             this.uniformsTerrain[ "uNormalScale" ].value = THREE.Math.mapLinear( valNorm, 0, 1, 0.6, 3.5 );
 
@@ -339,7 +345,7 @@ TERRAIN.Generate.prototype = {
         var colz =Math.floor((-z / this.Tsize + .5) * ( this.size));
         var pixel = Math.floor(((colz-1)*this.size)+colx)*4;
         var result = (this.tmpData[pixel+0]+this.tmpData[pixel+1]+this.tmpData[pixel+2])*this.ratio;
-        return result-this.seaLevel+2;
+        return result-this.seaLevel+4;
     }
 
 }

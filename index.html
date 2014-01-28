@@ -72,7 +72,8 @@
 <script type="text/javascript">
 
 // three.js var
-var camera, scene, directionalLight, pointLight, ambientLight, renderer, container, center, projector, content;
+var camera, scene, renderer, container, center, projector, content;
+var hemiLight, directionalLight, pointLight, ambientLight;
 var meshs = [];
 var geoBox, geoSphere, geoPlane;
 var matBox1, matSphere1, matSphere2, matGround, matBox2, matBox3, glow1, glow2, tShadow;
@@ -98,6 +99,8 @@ var radius1 = 8;
 var radius2 = 6;
 var initNext = null;
 
+var sbox;
+
 var RvoWorker = new Worker('js/Rvo.worker.js');
 RvoWorker.postMessage = RvoWorker.webkitPostMessage || RvoWorker.postMessage;
 
@@ -115,6 +118,7 @@ function init() {
     //renderer.setClearColor( 0x222222, 1 );
     renderer.gammaInput = true;
     renderer.gammaOutput = true;
+    renderer.shadowMapEnabled = true;
     
     container = document.getElementById("container");
     container.appendChild( renderer.domElement );
@@ -133,17 +137,8 @@ function init() {
 
     projector = new THREE.Projector();
 
-    ambientLight = new THREE.AmbientLight(  0x111111 )
-    scene.add( ambientLight );
-
-    directionalLight = new THREE.DirectionalLight( 0xffffee , 1.5 );
-    directionalLight.position.set( 0.3, 1, 0.5 );
-    scene.add( directionalLight );
-
-    pointLight = new THREE.PointLight( 0xffffff, 1.5);
-    pointLight.position.set(0, 500, 0);
-    scene.add( pointLight );
     
+    initLight();
     
 
     matSphere1 = new THREE.MeshLambertMaterial( { color: 0x3d9970, name:'sph' } );
@@ -168,7 +163,7 @@ function init() {
     glowTexture2.premultiplyAlpha = true;
     glowTexture2.needsUpdate = true;
 
-    tShadow = new THREE.MeshBasicMaterial({ map: glowTexture2,transparent: true, opacity: 1, fog:true, depthWrite:false, lights:false});//, depthWrite: false depthTest 
+    tShadow = new THREE.MeshBasicMaterial({ map: glowTexture2,transparent: true, opacity: 0.4, fog:true, depthWrite:false, lights:false});//, depthWrite: false depthTest 
 
 
 
@@ -203,17 +198,23 @@ function init() {
         fragmentShader: cubeShader.fragmentShader,
         vertexShader: cubeShader.vertexShader,
         uniforms: cubeShader.uniforms,
+       //
         depthWrite: false,
-        side: THREE.BackSide
+        side: THREE.BackSide//,
+       // transparent: true, opacity: 0.2
+
     });
 
-    var skyBox = new THREE.Mesh(
-        new THREE.CubeGeometry( 10000, 10000, 10000 ),
-        skyBoxMaterial
-    );
+    var skyBox = new THREE.Mesh(new THREE.CubeGeometry( 10000, 10000, 10000 ),  skyBoxMaterial );
     
     scene.add( skyBox );
 
+    sbox = new THREE.MeshBasicMaterial( {  color: 0x000000, transparent: true, opacity:0, depthWrite: false, side: THREE.BackSide } );
+    var skyBox2 = new THREE.Mesh(new THREE.CubeGeometry( 8000, 8000, 8000 ),  sbox );
+    
+    scene.add( skyBox2 );
+
+    
     
 
     content = new THREE.Object3D();
@@ -232,6 +233,48 @@ function init() {
 
     //setInterval(loop, 1000/60);
     loop();
+}
+
+//-----------------------------------------------------
+//  LIGHT
+//-----------------------------------------------------
+
+function initLight() {
+
+    //ambientLight = new THREE.AmbientLight(  0x111111 )
+    //scene.add( ambientLight );
+
+   // hemiLight = new THREE.HemisphereLight( 0x6c7a97, 0xd7ccb0, 1 );
+    hemiLight = new THREE.HemisphereLight( 0x000000, 0x000000, 1 );
+    hemiLight.position.set( 0, 50, 0 );
+    scene.add( hemiLight );
+
+    directionalLight = new THREE.DirectionalLight( 0xffffee , 0 );
+    directionalLight.position.set( 0.3, 1, 0.5 );
+    directionalLight.position.multiplyScalar( 600 );
+    scene.add( directionalLight );
+
+    directionalLight.castShadow = true;
+
+    directionalLight.shadowMapWidth = 1024;
+    directionalLight.shadowMapHeight = 1024;
+
+    var d = 600;
+
+    directionalLight.shadowCameraLeft = -d;
+    directionalLight.shadowCameraRight = d;
+    directionalLight.shadowCameraTop = d;
+    directionalLight.shadowCameraBottom = -d;
+
+    directionalLight.shadowCameraFar = 2000;
+    directionalLight.shadowBias = -0.0001;
+    directionalLight.shadowDarkness = 0.4;
+    //directionalLight.shadowCameraVisible = true;
+
+    pointLight = new THREE.PointLight( 0xffffff, 0);
+    pointLight.position.set(0, 500, 0);
+    scene.add( pointLight );
+
 }
 
 function addWater() {
@@ -301,23 +344,27 @@ function newMesh(s){
     content.add(m);
     meshs.push(m);
 
+   //m2.castShadow = true;
+   //m2.receiveShadow = true;
+
     var ar = new THREE.Mesh( geoBox, mat2 );
     ar.scale.set( 1, 1, s );
     ar.position.z =-s
-    ar.position.y =m2.position.y
+    ar.position.y = m2.position.y
     m.add( ar );
+
+    // fake shadow
 
     var shad = new THREE.Mesh(geoPlane, tShadow );
     shad.scale.set(s*4, s*4, s*4);
     shad.rotation.x =  - 90 * ToRad;
-    
     m.add(shad);
+
+    // glow effect
 
     /*var sprite = new THREE.Sprite( mat3 );
     sprite.scale.set(s*6, s*6, 1.0);
     m.add(sprite);*/
-
-
 }
 
 function obsMesh(p, s){
@@ -326,6 +373,9 @@ function obsMesh(p, s){
     m.position.copy(p);
     //m.visible = false;
     content.add(m);
+
+    m.castShadow = true;
+    m.receiveShadow = true;
     /*var helper = new THREE.BoxHelper(m);
     helper.material.color.set( 0x000000 );
     m.add( helper );*/
