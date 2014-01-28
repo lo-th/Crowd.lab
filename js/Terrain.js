@@ -41,7 +41,7 @@ TERRAIN.Generate = function( target, size, Tsize, maxHeight,  seaLevel ){
     this.cameraOrtho = null;
 
     this.specularMap = null;
-    this.diffuseTexture1 = null;
+    
     this.W = 0;
     this.H = 0;
 
@@ -56,7 +56,17 @@ TERRAIN.Generate = function( target, size, Tsize, maxHeight,  seaLevel ){
 
     this.tmpData = null;
 
+    this.oceanTexture = null;
+    this.sandyTexture = null;
+    this.grassTexture = null;
+    this.rockyTexture = null;
+    this.snowyTexture = null;
+    this.diffuseTexture1 = null;
+    this.diffuseTexture2 = null;
+    this.detailTexture = null;
 
+    this.fullLoaded = false;
+    this.nullTexture = false;
 
 }
 
@@ -67,8 +77,49 @@ TERRAIN.Generate.prototype = {
 
     },
     init:function (W,H) {
+
         this.W = W || 512;
         this.H = H || 512;
+
+        var PATH = "images/";
+
+        this.diffuseTexture1 = THREE.ImageUtils.loadTexture( PATH + "grass1.jpg", new THREE.UVMapping(), this.loadTextures() );
+        this.diffuseTexture2 = THREE.ImageUtils.loadTexture( PATH + "background6.jpg", new THREE.UVMapping(), this.loadTextures() )
+        this.detailTexture = THREE.ImageUtils.loadTexture( PATH + "grasslight_512.jpg", new THREE.UVMapping(), this.loadTextures() );
+
+        this.oceanTexture = new THREE.ImageUtils.loadTexture( PATH + "wetStone.jpg", new THREE.UVMapping(), this.loadTextures() );
+        this.sandyTexture = new THREE.ImageUtils.loadTexture( PATH + "sand.jpg", new THREE.UVMapping(), this.loadTextures() );
+        this.grassTexture = new THREE.ImageUtils.loadTexture( PATH + "grass1.jpg", new THREE.UVMapping(), this.loadTextures() );
+        this.rockyTexture = new THREE.ImageUtils.loadTexture( PATH + "grass2.jpg", new THREE.UVMapping(), this.loadTextures() );
+        this.snowyTexture = new THREE.ImageUtils.loadTexture( PATH + "rock2.jpg", new THREE.UVMapping(), this.loadTextures() );
+
+        this.nullTexture = new THREE.ImageUtils.loadTexture( PATH + "flat.png", new THREE.UVMapping(), this.loadTextures() );
+
+    },
+    loadTextures:function () {
+
+        this.textureCounter += 1;
+        if ( this.textureCounter == 9 )  {
+            this.fullLoaded = true;
+            this.start();
+        }
+
+    },
+    start:function() {
+
+        this.diffuseTexture1.format = THREE.RGBFormat;
+        this.diffuseTexture2.format = THREE.RGBFormat;
+        this.detailTexture.format = THREE.RGBFormat;
+        this.oceanTexture.format = THREE.RGBFormat;
+        this.sandyTexture.format = THREE.RGBFormat;
+        this.grassTexture.format = THREE.RGBFormat;
+        this.rockyTexture.format = THREE.RGBFormat;
+        this.snowyTexture.format = THREE.RGBFormat;
+        this.nullTexture.format = THREE.RGBFormat;
+
+        /*this.diffuseTexture1.flipY = false;
+        this.diffuseTexture2.flipY = false;
+        this.detailTexture.flipY = false;*/
 
         this.generateData(this.size, this.size, new THREE.Color(0x000000));
 
@@ -107,10 +158,10 @@ TERRAIN.Generate.prototype = {
 
         var terrainNoise = THREE.ShaderNoise[ "noise" ];
 
-       // this.specularMap = new THREE.WebGLRenderTarget( 512, 512, pars );
-        this.specularMap = new THREE.WebGLRenderTarget( 1024, 1024, pars );
+        this.specularMap = new THREE.WebGLRenderTarget( 512, 512, pars );
+        //this.specularMap = new THREE.WebGLRenderTarget( 1024, 1024, pars );
 
-        this.diffuseTexture1 = THREE.ImageUtils.loadTexture( "images/grass1.jpg")//, null, this.loadTextures() );
+        //this.diffuseTexture1 = THREE.ImageUtils.loadTexture( TERRAIN.Link+"images/grass1.jpg")//, null, this.loadTextures() );
 
         this.applyShader();
             /*function () {
@@ -120,31 +171,31 @@ TERRAIN.Generate.prototype = {
 
         } );*/
 
-        var diffuseTexture2 = THREE.ImageUtils.loadTexture( "images/background6.jpg")//, null, this.loadTextures() );
+        //var diffuseTexture2 = THREE.ImageUtils.loadTexture( TERRAIN.Link+"images/background6.jpg")//, null, this.loadTextures() );
         //var detailTexture = THREE.ImageUtils.loadTexture( "images/grasslight-big-nm.jpg", null, loadTextures );
-        var detailTexture = THREE.ImageUtils.loadTexture( "images/grasslight_512.jpg")//, null, this.loadTextures() );
+        //, null, this.loadTextures() );
 
         this.diffuseTexture1.wrapS = this.diffuseTexture1.wrapT = THREE.RepeatWrapping;
-        diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
-        detailTexture.wrapS = detailTexture.wrapT = THREE.RepeatWrapping;
+        this.diffuseTexture2.wrapS = this.diffuseTexture2.wrapT = THREE.RepeatWrapping;
+        this.detailTexture.wrapS = this.detailTexture.wrapT = THREE.RepeatWrapping;
         this.specularMap.wrapS = this.specularMap.wrapT = THREE.RepeatWrapping;
 
         // MAP
 
-        var oceanTexture = new THREE.ImageUtils.loadTexture( 'images/wetStone.jpg' );
-        oceanTexture.wrapS = oceanTexture.wrapT = THREE.RepeatWrapping; 
+        //this.oceanTexture = new THREE.ImageUtils.loadTexture( TERRAIN.Link+'images/wetStone.jpg' );
+        this.oceanTexture.wrapS = this.oceanTexture.wrapT = THREE.RepeatWrapping; 
         
-        var sandyTexture = new THREE.ImageUtils.loadTexture( 'images/sand.jpg' );
-        sandyTexture.wrapS = sandyTexture.wrapT = THREE.RepeatWrapping; 
+       // this.sandyTexture = new THREE.ImageUtils.loadTexture( TERRAIN.Link+'images/sand.jpg' );
+        this.sandyTexture.wrapS = this.sandyTexture.wrapT = THREE.RepeatWrapping; 
         
-        var grassTexture = new THREE.ImageUtils.loadTexture( 'images/grass1.jpg' );
-        grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping; 
+        //this.grassTexture = new THREE.ImageUtils.loadTexture( TERRAIN.Link+'images/grass1.jpg' );
+        this.grassTexture.wrapS = this.grassTexture.wrapT = THREE.RepeatWrapping; 
         
-        var rockyTexture = new THREE.ImageUtils.loadTexture( 'images/grass2.jpg' );
-        rockyTexture.wrapS = rockyTexture.wrapT = THREE.RepeatWrapping; 
+       // this.rockyTexture = new THREE.ImageUtils.loadTexture( TERRAIN.Link+'images/grass2.jpg' );
+        this.rockyTexture.wrapS = this.rockyTexture.wrapT = THREE.RepeatWrapping; 
         
-        var snowyTexture = new THREE.ImageUtils.loadTexture( 'images/rock2.jpg' );
-        snowyTexture.wrapS = snowyTexture.wrapT = THREE.RepeatWrapping;
+       // this.snowyTexture = new THREE.ImageUtils.loadTexture( TERRAIN.Link+'images/rock2.jpg' );
+        this.snowyTexture.wrapS = this.snowyTexture.wrapT = THREE.RepeatWrapping;
 
         // TERRAIN SHADER
 
@@ -152,11 +203,11 @@ TERRAIN.Generate.prototype = {
 
         this.uniformsTerrain = THREE.UniformsUtils.clone( terrainShader.uniforms );
 
-        this.uniformsTerrain[ "oceanTexture" ].value = oceanTexture;
-        this.uniformsTerrain[ "sandyTexture" ].value = sandyTexture;
-        this.uniformsTerrain[ "grassTexture" ].value = grassTexture;
-        this.uniformsTerrain[ "rockyTexture" ].value = rockyTexture;
-        this.uniformsTerrain[ "snowyTexture" ].value = snowyTexture;
+        this.uniformsTerrain[ "oceanTexture" ].value = this.oceanTexture;
+        this.uniformsTerrain[ "sandyTexture" ].value = this.sandyTexture;
+        this.uniformsTerrain[ "grassTexture" ].value = this.grassTexture;
+        this.uniformsTerrain[ "rockyTexture" ].value = this.rockyTexture;
+        this.uniformsTerrain[ "snowyTexture" ].value = this.snowyTexture;
 
         this.uniformsTerrain[ "tNormal" ].value = this.normalMap;
         this.uniformsTerrain[ "uNormalScale" ].value = 10;//3.5;
@@ -164,9 +215,9 @@ TERRAIN.Generate.prototype = {
         this.uniformsTerrain[ "tDisplacement" ].value = this.heightMap;
 
         this.uniformsTerrain[ "tDiffuse1" ].value = this.diffuseTexture1;
-        this.uniformsTerrain[ "tDiffuse2" ].value = diffuseTexture2;
+        this.uniformsTerrain[ "tDiffuse2" ].value = this.diffuseTexture2;
         this.uniformsTerrain[ "tSpecular" ].value = this.specularMap;
-        this.uniformsTerrain[ "tDetail" ].value = detailTexture;
+        this.uniformsTerrain[ "tDetail" ].value = this.detailTexture;
 
         this.uniformsTerrain[ "enableDiffuse1" ].value = true;
         this.uniformsTerrain[ "enableDiffuse2" ].value = true;
@@ -181,7 +232,7 @@ TERRAIN.Generate.prototype = {
         this.uniformsTerrain[ "uDisplacementScale" ].value = this.maxHeight;
 
         //uniformsTerrain[ "uRepeatOverlay" ].value.set( 6, 6 );
-        this.uniformsTerrain[ "uRepeatOverlay" ].value.set( 18, 18 );
+        this.uniformsTerrain[ "uRepeatOverlay" ].value.set( 12, 12 );
 
         var params = [
                         [ 'heightmap',  terrainNoise.fragmentShader, terrainNoise.vertexShader, this.uniformsNoise, false ],
@@ -254,19 +305,7 @@ TERRAIN.Generate.prototype = {
         renderer.render( sceneTmp, this.cameraOrtho, this.specularMap, true );
 
     },
-    loadTextures:function () {
-
-        this.textureCounter += 1;
-
-        if ( this.textureCounter == 3 )  {
-
-           // terrain.visible = true;
-           this.mesh.visible = true;
-
-
-        }
-
-    },
+    
     generateData : function (width, height, color) {
         var size = width * height;
         var data = new Uint8Array(4 * size);
@@ -292,7 +331,7 @@ TERRAIN.Generate.prototype = {
         this.tmpData = data;
     },
     update:function (delta) {
-        if ( this.mesh ) {
+        if ( this.fullLoaded ) {
 
             var time = Date.now() * 0.001;
 
@@ -304,8 +343,10 @@ TERRAIN.Generate.prototype = {
 
             scene.fog.color.setHSL( 43/360, 0.33, this.lightVal-0.03);
 
-            hemiLight.color.setHSL( 220/360, 0.17, this.lightVal-0.1  );
-            hemiLight.groundColor.setHSL( 43/360, 0.33, this.lightVal-0.03 );
+            if(hemiLight){
+                hemiLight.color.setHSL( 220/360, 0.17, this.lightVal-0.1  );
+                hemiLight.groundColor.setHSL( 43/360, 0.33, this.lightVal-0.03 );
+            }
 
             directionalLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.1, 1.15 );
             pointLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.9, 1.5 );
@@ -321,7 +362,9 @@ TERRAIN.Generate.prototype = {
 
                 this.uniformsNoise[ "offset" ].value.x += delta * 0.05;
 
-                this.uniformsTerrain[ "uOffset" ].value.x = 12 * this.uniformsNoise[ "offset" ].value.x;//4
+                this.uniformsTerrain[ "uOffset" ].value.x = 8 * this.uniformsNoise[ "offset" ].value.x;//4
+
+
 
                 this.quadTarget.material =  this.mlib[ "heightmap" ];
                 renderer.render( this.sceneRenderTarget, this.cameraOrtho, this.heightMap, true );
@@ -342,6 +385,7 @@ TERRAIN.Generate.prototype = {
         this.lightDir *= -1;
     },
     getZ:function (x, z) {
+        if(!this.fullLoaded) return 0;
         var colx =Math.floor((x / this.Tsize + .5) * ( this.size));
         var colz =Math.floor((-z / this.Tsize + .5) * ( this.size));
         var pixel = Math.floor(((colz-1)*this.size)+colx)*4;

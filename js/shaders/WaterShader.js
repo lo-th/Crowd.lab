@@ -42,7 +42,7 @@ THREE.ShaderLib['water'] = {
 	].join('\n'),
 
 	fragmentShader: [
-		'precision highp float;',
+		//'precision highp float;',
 		
 		'uniform sampler2D mirrorSampler;',
 		'uniform float alpha;',
