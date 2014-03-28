@@ -1,7 +1,7 @@
 
 
 'use strict';
-importScripts('../build/rvo.js');
+importScripts('../build/rvo.min.js');
 
 var simulator;
 var simulationStep;
