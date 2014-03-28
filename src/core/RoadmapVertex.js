@@ -1,0 +1,2 @@
+RVO.RoadmapVertex = function() {
+}

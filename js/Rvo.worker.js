@@ -1,7 +1,7 @@
 
 
 'use strict';
-importScripts('../build/Rvo.js');
+importScripts('../build/rvo.js');
 
 var simulator;
 var simulationStep;
@@ -208,17 +208,17 @@ function populate() {
 
 var simulationInfo = function(){
 
-    time = Date.now();
+   /* time = Date.now();
     ms = time - t01;
     if(ms > maxms)maxms = ms;
     if (time - 1000 > time_prev) {
         time_prev = time; fpsint = fps; fps = 0;
-    } fps++;
+    } fps++;*/
 
-    infos[0] = fpsint;
-    infos[1] = ms;
-    infos[2] = maxms;
-    infos[3] = simulator.performance.KdTree;
-    infos[4] = simulator.performance.updateAgent;
-    infos[5] = simulator.performance.orcaLines;
+    infos[0] = simulator.performance.fpsint;
+   // infos[1] = ms;
+   // infos[2] = maxms;
+    infos[1] = simulator.performance.KdTree;
+    infos[2] = simulator.performance.updateAgent;
+    infos[3] = simulator.performance.orcaLines;
 }

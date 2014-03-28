@@ -1,31 +1,14 @@
 /**
- * RVO 2.0a
- * @author Samuel Giradin / http://www.visualiser.fr//
- * 
- * Compact Rvo.js
+ * RVO 0.2
+ * @author Samuel Girardin / http://www.visualiser.fr/
  * @author LoTh / http://3dflashlo.wordpress.com/
  */
-
+ 
 var RVO = { REVISION: '2.0' };
 
 RVO.EPSILON = 0.0001;
 RVO.MAX_LEAF_SIZE = 10;
 RVO.ToDeg = 180 / Math.PI;
-
-//------------------------------
-//  PERFORMANCE
-//------------------------------
-
-RVO.Performance = function(){
-    this.KdTree=0;
-    this.updateAgent=0;
-    this.orcaLines=0;
-}
-
-//------------------------------
-//  SIMULATOR
-//------------------------------
-
 RVO.Simulator = function(){
 	//this.time_ = 0;
     this.agents_ = [];
@@ -61,13 +44,20 @@ RVO.Simulator.prototype = {
 
         var i = this.agents_.length;
         while(i--){
-
             this.agents_[i].computeNeighbors();
             this.agents_[i].computeNewVelocity();
             this.agents_[i].update(); 
         }
         var time3=Date.now();
         this.performance.updateAgent=time3-time2;
+
+        // fps update
+        if (time3 - 1000 > this.performance.time_prev) {
+            this.performance.time_prev = time3;
+            this.performance.fpsint = this.performance.fps; 
+            this.performance.fps = 0;
+        } this.performance.fps++;
+
     },
 
     processObstacles:function () {
@@ -182,11 +172,6 @@ RVO.Simulator.prototype = {
     }
 
 }
-
-//------------------------------
-//  AGENT
-//------------------------------
-
 RVO.Agent = function(){
     // IList <KeyValuePair <float, Agent >> agentNeighbors_ = new List < KeyValuePair < float, Agent >>();
     // IList <KeyValuePair <float, Obstacle >> obstacleNeighbors_ = new List < KeyValuePair < float, Obstacle >>();
@@ -756,11 +741,93 @@ RVO.Agent.prototype = {
         }
     }
 }
+RVO.Performance = function(){
+    this.time_prev=0;
+    this.fpsint=0;
+    this.fps=0;
+    this.KdTree=0;
+    this.updateAgent=0;
+    this.orcaLines=0;
+}
+RVO.AgentTreeNode = function() {
+}
+RVO.Dijkstra = function() {
+}
 
-//------------------------------
-//  KDTREE
-//------------------------------
+RVO.Dijkstra.prototype = {
+    constructor: RVO.Dijkstra,
 
+    buildRoadmap:function (sim, roadmap) {
+        for (var i = 0; i < roadmap.length; ++i) {
+            for (var j = 0; j < roadmap.length; ++j) {
+                if (sim.queryVisibility(roadmap[i].position, roadmap[j].position, sim.getAgentRadius(0))) {
+                    roadmap[i].neighbors.push(j);
+                }
+            }
+
+            for (var k = 0; k < 4; ++k) {
+                roadmap[i].distToGoal[k] = Number.POSITIVE_INFINITY;
+            }
+        }
+
+        for (var i = 0; i < 4; ++i) {
+            //std:: multimap < float, int > Q;
+            var Q = new RVO.Multimap();
+
+            // std:: vector < std:: multimap < float, int >:: iterator > posInQ(roadmap.size(), Q.end());
+            var posInQ = new RVO.Multimap();
+
+            roadmap[i].distToGoal[i] = 0;
+
+            // posInQ[i] = Q.insert(std:: make_pair(0.0f, i));
+            posInQ[i] = Q.keyValue.push(new RVO.KeyValuePair(0, i));
+
+            while (Q.keyValue.length != 0) {
+                // const u = Q.begin() - > second;
+                //  Q.erase(Q.begin());
+                //   posInQ[u] = Q.end();
+                var u = Q.keyValue[0].Value;
+                Q.keyValue.shift();
+                posInQ[u] = Q.keyValue[Q.keyValue.length - 1];
+
+                for (var j = 0; j < roadmap[u].neighbors.length; ++j) {
+                    var v = roadmap[u].neighbors[j];
+                    var dist_uv = Math.abs(roadmap[v].position.moins(roadmap[u].position));
+
+                    if (roadmap[v].distToGoal[i] > roadmap[u].distToGoal[i] + dist_uv) {
+                        roadmap[v].distToGoal[i] = roadmap[u].distToGoal[i] + dist_uv;
+
+                        if (posInQ[v] == Q.keyValue[Q.keyValue.length - 1]) {
+                            posInQ[v] = Q.keyValue.push(new RVO.KeyValuePair(roadmap[v].distToGoal[i], v));
+                        } else {
+                            //  Q.erase(posInQ[v]);
+                            Q.keyValue.push(new RVO.KeyValuePair(roadmap[v].distToGoal[i], v));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}
+RVO.FloatPair = function(a, b) {
+	this._a = a;
+    this._b = b;
+}
+
+RVO.FloatPair.inf = function (lhs, rhs) {
+    return (lhs._a < rhs._a || !(rhs._a < lhs._a) && lhs._b < rhs._b);
+}
+RVO.FloatPair.inf_equal = function (lhs, rhs) {
+    return (lhs._a == rhs._a && lhs._b == rhs._b) || lhs < rhs;
+}
+RVO.FloatPair.sup = function (lhs, rhs) {
+    return !RVO.FloatPair.inf_equal(lhs, rhs);
+    // return !inf_equal(lhs, rhs);
+}
+RVO.FloatPair.sup_equal = function (lhs, rhs) {
+    return !RVO.FloatPair.inf;
+}
 RVO.KdTree = function() {
 	this.parent=null;
     //this.MAX_LEAF_SIZE = 10;
@@ -1104,143 +1171,40 @@ RVO.KdTree.prototype = {
         }
     }
 }
-
-//------------------------------
-//  AGENTTREENODE
-//------------------------------
-
-RVO.AgentTreeNode = function() {
-}
-
-//------------------------------
-//  OBSTACLES
-//------------------------------
-
-RVO.Obstacle = function() {
-}
-
-//------------------------------
-//  OBSTACLESTREENODE
-//------------------------------
-
-RVO.ObstacleTreeNode = function() {
-}
-
-//------------------------------
-//  ROADMAPVETEX
-//------------------------------
-
-RVO.RoadmapVertex = function() {
-}
-
-//------------------------------
-//  MULTIMAP
-//------------------------------
-
-RVO.Multimap = function() {
-	this.keyValue = [];
-}
-
-//------------------------------
-//  DIJKSTRA
-//------------------------------
-
-RVO.Dijkstra = function() {
-}
-
-RVO.Dijkstra.prototype = {
-    constructor: RVO.Dijkstra,
-
-    buildRoadmap:function (sim, roadmap) {
-        for (var i = 0; i < roadmap.length; ++i) {
-            for (var j = 0; j < roadmap.length; ++j) {
-                if (sim.queryVisibility(roadmap[i].position, roadmap[j].position, sim.getAgentRadius(0))) {
-                    roadmap[i].neighbors.push(j);
-                }
-            }
-
-            for (var k = 0; k < 4; ++k) {
-                roadmap[i].distToGoal[k] = Number.POSITIVE_INFINITY;
-            }
-        }
-
-        for (var i = 0; i < 4; ++i) {
-            //std:: multimap < float, int > Q;
-            var Q = new RVO.Multimap();
-
-            // std:: vector < std:: multimap < float, int >:: iterator > posInQ(roadmap.size(), Q.end());
-            var posInQ = new RVO.Multimap();
-
-            roadmap[i].distToGoal[i] = 0;
-
-            // posInQ[i] = Q.insert(std:: make_pair(0.0f, i));
-            posInQ[i] = Q.keyValue.push(new RVO.KeyValuePair(0, i));
-
-            while (Q.keyValue.length != 0) {
-                // const u = Q.begin() - > second;
-                //  Q.erase(Q.begin());
-                //   posInQ[u] = Q.end();
-                var u = Q.keyValue[0].Value;
-                Q.keyValue.shift();
-                posInQ[u] = Q.keyValue[Q.keyValue.length - 1];
-
-                for (var j = 0; j < roadmap[u].neighbors.length; ++j) {
-                    var v = roadmap[u].neighbors[j];
-                    var dist_uv = RVO.Abs(roadmap[v].position.moins(roadmap[u].position));
-
-                    if (roadmap[v].distToGoal[i] > roadmap[u].distToGoal[i] + dist_uv) {
-                        roadmap[v].distToGoal[i] = roadmap[u].distToGoal[i] + dist_uv;
-
-                        if (posInQ[v] == Q.keyValue[Q.keyValue.length - 1]) {
-                            posInQ[v] = Q.keyValue.push(new RVO.KeyValuePair(roadmap[v].distToGoal[i], v));
-                        } else {
-                            //  Q.erase(posInQ[v]);
-                            Q.keyValue.push(new RVO.KeyValuePair(roadmap[v].distToGoal[i], v));
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-}
-
-//------------------------------
-//  FLOATPAIR
-//------------------------------
-
-RVO.FloatPair = function(a, b) {
-	this._a = a;
-    this._b = b;
-}
-
-RVO.FloatPair.inf = function (lhs, rhs) {
-    return (lhs._a < rhs._a || !(rhs._a < lhs._a) && lhs._b < rhs._b);
-}
-RVO.FloatPair.inf_equal = function (lhs, rhs) {
-    return (lhs._a == rhs._a && lhs._b == rhs._b) || lhs < rhs;
-}
-RVO.FloatPair.sup = function (lhs, rhs) {
-    return !RVO.FloatPair.inf_equal(lhs, rhs);
-    // return !inf_equal(lhs, rhs);
-}
-RVO.FloatPair.sup_equal = function (lhs, rhs) {
-    return !RVO.FloatPair.inf;
-}
-
-//------------------------------
-//  KEYVALUEPAIR
-//------------------------------
-
 RVO.KeyValuePair = function(key_, value_) {
 	this.Key = key_;
     this.Value = value_;
 }
-
-//------------------------------
-//  VECTOR2
-//------------------------------
-
+RVO.Multimap = function() {
+	this.keyValue = [];
+}
+RVO.Obstacle = function() {
+}
+RVO.ObstacleTreeNode = function() {
+}
+RVO.RoadmapVertex = function() {
+}
+RVO.Det = function (v1, v2) { 
+	return v1.x * v2.y - v1.y * v2.x; 
+}
+RVO.DistSqPointLineSegment = function (a, b, c) {
+    var r = c.moins(a).mul(b.moins(a)) / (b.moins(a)).absSq();
+    if (r < 0) {
+        return (c.moins(a)).absSq();
+    } else if (r > 1) {
+        return (c.moins(b)).absSq();
+    } else {
+        return (c.moins(a.plus(b.moins(a).mul_k(r)))).absSq();
+    }
+}
+RVO.LeftOf = function (a, b, c) { 
+	return RVO.Det(a.moins(c), b.moins(a)); 
+}
+RVO.Line = function() {
+}
+RVO.Sqr = function(p){ 
+	return p * p; 
+}
 RVO.Vector2 = function(x, y) {
     this.x = x || 0;
     this.y = y || 0;
@@ -1306,33 +1270,5 @@ RVO.Vector2.prototype = {
     },
     clone: function () {
         return new RVO.Vector2( this.x, this.y );
-    }
-}
-
-//------------------------------
-//  LINE
-//------------------------------
-
-RVO.Line = function() {
-}
-
-//------------------------------
-//  MATH
-//------------------------------
-
-RVO.Sqr = function(p){ return p * p; }
-
-RVO.Det = function (v1, v2) { return v1.x * v2.y - v1.y * v2.x; }
-
-RVO.LeftOf = function (a, b, c) { return RVO.Det(a.moins(c), b.moins(a)); }
-
-RVO.DistSqPointLineSegment = function (a, b, c) {
-    var r = c.moins(a).mul(b.moins(a)) / (b.moins(a)).absSq();
-    if (r < 0) {
-        return (c.moins(a)).absSq();
-    } else if (r > 1) {
-        return (c.moins(b)).absSq();
-    } else {
-        return (c.moins(a.plus(b.moins(a).mul_k(r)))).absSq();
     }
 }

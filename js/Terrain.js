@@ -103,7 +103,6 @@ TERRAIN.Generate.prototype = {
             this.fullLoaded = true;
             this.start();
         }
-
     },
     start:function() {
 
@@ -210,7 +209,7 @@ TERRAIN.Generate.prototype = {
         this.uniformsTerrain[ "snowyTexture" ].value = this.snowyTexture;
 
         this.uniformsTerrain[ "tNormal" ].value = this.normalMap;
-        this.uniformsTerrain[ "uNormalScale" ].value = 10;//3.5;
+        this.uniformsTerrain[ "uNormalScale" ].value = 3.5;
 
         this.uniformsTerrain[ "tDisplacement" ].value = this.heightMap;
 
@@ -279,8 +278,10 @@ TERRAIN.Generate.prototype = {
         this.mesh.rotation.x = -Math.PI / 2;
         this.mesh.position.y = -this.seaLevel;
 
-        this.mesh.castShadow = false;
-        this.mesh.receiveShadow = true;
+        //this.mesh.castShadow = false;
+        //this.mesh.receiveShadow = true;
+
+        //this.update(1);
     },
     applyShader:function () {
         var shader = THREE.LuminosityShader;
@@ -341,17 +342,16 @@ TERRAIN.Generate.prototype = {
 
             var valNorm = ( this.lightVal - fLow ) / ( fHigh - fLow );
 
-            scene.fog.color.setHSL( 43/360, 0.33, this.lightVal-0.03);
+            if(scene.fog) scene.fog.color.setHSL( 43/360, 0.33, this.lightVal-0.03);
 
             if(hemiLight){
                 hemiLight.color.setHSL( 220/360, 0.17, this.lightVal-0.1  );
                 hemiLight.groundColor.setHSL( 43/360, 0.33, this.lightVal-0.03 );
             }
 
-            directionalLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.1, 1.15 );
-            pointLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.9, 1.5 );
-
-            sbox.opacity = (1-(this.lightVal*1.25));
+            //if(directionalLight)directionalLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.1, 1.15 );
+            //if(pointLight)pointLight.intensity = THREE.Math.mapLinear( valNorm, 0, 1, 0.9, 1.5 );
+            if(sbox)sbox.opacity = (1-(this.lightVal*1.25));
 
             this.uniformsTerrain[ "uNormalScale" ].value = THREE.Math.mapLinear( valNorm, 0, 1, 0.6, 3.5 );
 
@@ -363,8 +363,6 @@ TERRAIN.Generate.prototype = {
                 this.uniformsNoise[ "offset" ].value.x += delta * 0.05;
 
                 this.uniformsTerrain[ "uOffset" ].value.x = 8 * this.uniformsNoise[ "offset" ].value.x;//4
-
-
 
                 this.quadTarget.material =  this.mlib[ "heightmap" ];
                 renderer.render( this.sceneRenderTarget, this.cameraOrtho, this.heightMap, true );

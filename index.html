@@ -40,6 +40,11 @@
 <script src="js/BufferGeometryUtils.js"></script>
 <script src="js/Terrain.js"></script>
 
+<script src="js/loaders/sea3d/SEA3D.js"></script>
+<script src="js/loaders/sea3d/SEA3DLoader.js"></script>
+<script src="js/loaders/sea3d/SEA3DDeflate.js"></script>
+<script src="js/loaders/sea3d/SEA3DLZMA.js"></script> 
+
 <script src="js/shaders/Mirror.js"></script>
 <script src="js/shaders/WaterShader.js"></script>
 <script src="js/shaders/ShaderTerrain.js"></script>
@@ -111,14 +116,13 @@ init();
 function init() {
 
     // THREE init
-    //renderer = new THREE.WebGLRenderer({precision: "mediump", antialias:false});
-    renderer = new THREE.WebGLRenderer();
+    renderer = new THREE.WebGLRenderer({precision: "mediump", antialias:false});
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.autoClearColor = false;
     //renderer.setClearColor( 0x222222, 1 );
     renderer.gammaInput = true;
     renderer.gammaOutput = true;
-    renderer.shadowMapEnabled = false;
+    //renderer.shadowMapEnabled = false;
     
     container = document.getElementById("container");
     container.appendChild( renderer.domElement );
@@ -131,6 +135,9 @@ function init() {
     center = new THREE.Vector3();
     moveCamera();
 
+    initLight();
+    initSky();
+
     
     //scene.fog = new THREE.FogExp2( 0xd7ccb0, 0.0025 );
     scene.fog = new THREE.Fog( 0xd7ccb0, 200, 1500 );
@@ -139,7 +146,7 @@ function init() {
     projector = new THREE.Projector();
 
     
-    initLight();
+    
     
 
     matSphere1 = new THREE.MeshLambertMaterial( { color: 0x3d9970, name:'sph' } );
@@ -168,7 +175,7 @@ function init() {
 
 
 
-    ground = new THREE.Mesh(new THREE.PlaneGeometry( ww, ww, 1,1 ), matGround);
+    ground = new THREE.Mesh(new THREE.PlaneGeometry( ww, ww, 2, 2 ), matGround);
     ground.rotation.x = -90 * ToRad;
     ground.visible = false;
     scene.add(ground);
@@ -176,16 +183,74 @@ function init() {
 
 
     terrain = new TERRAIN.Generate(scene, 128, ww, 120, 36);
-    terrain.init();
+    terrain.init( window.innerWidth, window.innerHeight );
 
+    content = new THREE.Object3D();
+    scene.add(content);
 
-    
+    container.addEventListener( 'mousemove', onMouseMove, false );
+    container.addEventListener( 'mousedown', onMouseDown, false );
+    container.addEventListener( 'mouseout', onMouseUp, false );
+    container.addEventListener( 'mouseup', onMouseUp, false );
+    container.addEventListener( 'mousewheel', onMouseWheel, false );
+    container.addEventListener( 'DOMMouseScroll', onMouseWheel, false ); 
+    window.addEventListener( 'resize', onWindowResize, false );
 
-   
+     // RVO simulation
+    RvoWorker.postMessage({tell:"INIT", timerStep:1000/60, simulationStep:1, timer:isTimer, nAgent:60 });
 
-    // load skybox
+    //setInterval(loop, 1000/60);
+    loop();
+}
 
-    var format = ".jpg";
+//-----------------------------------------------------
+//  LIGHT
+//-----------------------------------------------------
+
+function initLight() {
+
+    ambientLight = new THREE.AmbientLight(  0x303030 );
+    scene.add( ambientLight );
+
+   // hemiLight = new THREE.HemisphereLight( 0x6c7a97, 0xd7ccb0, 1 );
+    /*hemiLight = new THREE.HemisphereLight( 0x000000, 0x000000, 1 );
+    hemiLight.position.set( 0, 50, 0 );
+    scene.add( hemiLight );*/
+
+    directionalLight = new THREE.DirectionalLight( 0xffffee , 1 );
+    directionalLight.position.set( 0.3, 1, 0.5 );
+    //directionalLight.position.multiplyScalar( 600 );
+    scene.add( directionalLight );
+
+    /*directionalLight.castShadow = true;
+
+    directionalLight.shadowMapWidth = 1024;
+    directionalLight.shadowMapHeight = 1024;
+
+    var d = 600;
+
+    directionalLight.shadowCameraLeft = -d;
+    directionalLight.shadowCameraRight = d;
+    directionalLight.shadowCameraTop = d;
+    directionalLight.shadowCameraBottom = -d;
+
+    directionalLight.shadowCameraFar = 2000;
+    directionalLight.shadowBias = -0.0001;
+    directionalLight.shadowDarkness = 0.4;*/
+    //directionalLight.shadowCameraVisible = true;
+
+    pointLight = new THREE.PointLight( 0xffffff, 1);
+    pointLight.position.set(0, 500, 0);
+    scene.add( pointLight );
+
+}
+
+//-----------------------------------------------------
+//  INIT SKYBOX
+//-----------------------------------------------------
+
+function initSky() {
+     var format = ".jpg";
     var r = "images/sky32/";
     var urls = [ r + "posx"+format, r + "negx"+format,
                  r + "posy"+format, r + "negy"+format,
@@ -216,67 +281,6 @@ function init() {
     var skyBox2 = new THREE.Mesh(new THREE.CubeGeometry( 8000, 8000, 8000 ),  sbox );
     
     sceneback.add( skyBox2 );
-
-
-    
-
-    content = new THREE.Object3D();
-    scene.add(content);
-
-    container.addEventListener( 'mousemove', onMouseMove, false );
-    container.addEventListener( 'mousedown', onMouseDown, false );
-    container.addEventListener( 'mouseout', onMouseUp, false );
-    container.addEventListener( 'mouseup', onMouseUp, false );
-    container.addEventListener( 'mousewheel', onMouseWheel, false );
-    container.addEventListener( 'DOMMouseScroll', onMouseWheel, false ); 
-    window.addEventListener( 'resize', onWindowResize, false );
-
-     // RVO simulation
-    RvoWorker.postMessage({tell:"INIT", timerStep:1000/60, simulationStep:2, timer:isTimer, nAgent:60 });
-
-    //setInterval(loop, 1000/60);
-    loop();
-}
-
-//-----------------------------------------------------
-//  LIGHT
-//-----------------------------------------------------
-
-function initLight() {
-
-    //ambientLight = new THREE.AmbientLight(  0x111111 )
-    //scene.add( ambientLight );
-
-   // hemiLight = new THREE.HemisphereLight( 0x6c7a97, 0xd7ccb0, 1 );
-    /*hemiLight = new THREE.HemisphereLight( 0x000000, 0x000000, 1 );
-    hemiLight.position.set( 0, 50, 0 );
-    scene.add( hemiLight );*/
-
-    directionalLight = new THREE.DirectionalLight( 0xffffee , 0 );
-    directionalLight.position.set( 0.3, 1, 0.5 );
-    directionalLight.position.multiplyScalar( 600 );
-    scene.add( directionalLight );
-
-    /*directionalLight.castShadow = true;
-
-    directionalLight.shadowMapWidth = 1024;
-    directionalLight.shadowMapHeight = 1024;
-
-    var d = 600;
-
-    directionalLight.shadowCameraLeft = -d;
-    directionalLight.shadowCameraRight = d;
-    directionalLight.shadowCameraTop = d;
-    directionalLight.shadowCameraBottom = -d;
-
-    directionalLight.shadowCameraFar = 2000;
-    directionalLight.shadowBias = -0.0001;
-    directionalLight.shadowDarkness = 0.4;*/
-    //directionalLight.shadowCameraVisible = true;
-
-    pointLight = new THREE.PointLight( 0xffffff, 0);
-    pointLight.position.set(0, 500, 0);
-    scene.add( pointLight );
 
 }
 
@@ -358,10 +362,10 @@ function newMesh(s){
 
     // fake shadow
 
-    var shad = new THREE.Mesh(geoPlane, tShadow );
+    /*var shad = new THREE.Mesh(geoPlane, tShadow );
     shad.scale.set(s*4.5, s*4.5, s*4.5);
     shad.rotation.x =  - 90 * ToRad;
-    m.add(shad);
+    m.add(shad);*/
 
     // glow effect
 
@@ -377,8 +381,8 @@ function obsMesh(p, s){
     //m.visible = false;
     content.add(m);
 
-    m.castShadow = true;
-    m.receiveShadow = true;
+    //m.castShadow = true;
+    //m.receiveShadow = true;
     /*var helper = new THREE.BoxHelper(m);
     helper.material.color.set( 0x000000 );
     m.add( helper );*/
@@ -418,7 +422,7 @@ RvoWorker.onmessage = function(e) {
             p =  e.data.pos[i];
             meshs[i].position.x = p[0];
             meshs[i].position.z = p[1];
-            meshs[i].position.y = terrain.getZ(p[0], p[1]);
+            if(terrain)meshs[i].position.y = terrain.getZ(p[0], p[1]);
 
             meshs[i].rotation.y = e.data.rot[i];
         }
@@ -477,10 +481,10 @@ function displayInfo(){
     var info =[
         "Rvo.js worker 2.0<br><br>",
         "THREE: " + fpsint +" fps " +  ms+"/"+maxms + " ms<br>",
-        "RVO: " + workerInfo[0] + " fps " +  workerInfo[1]+"/"+workerInfo[2] + " ms<br><br>",
-        "KdTree time: "+ workerInfo[3] +" ms<br>" ,
-        "updateAgent time: "+ workerInfo[4] +" ms<br><br>",
-        "num orcaLines: "+ workerInfo[5] +"<br>"
+        "RVO: " + workerInfo[0] + " fps<br><br>",
+        "KdTree time: "+ workerInfo[1] +" ms<br>" ,
+        "updateAgent time: "+ workerInfo[2] +" ms<br><br>",
+        "num orcaLines: "+ workerInfo[3] +"<br>"
          
     ].join("\n");
     document.getElementById("info").innerHTML = info;

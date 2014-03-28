@@ -172,8 +172,8 @@ THREE.ShaderTerrain = {
 
 				" } else if( enableDiffuse1 ) {",
 
-					//"gl_FragColor = gl_FragColor * texture2D( tDiffuse1, uvOverlay );",
-					"gl_FragColor = gl_FragColor * texture2D( tDiffuse1, uvOverlay ) + water + sandy + grass + rocky + snowy;",
+					"gl_FragColor = gl_FragColor * texture2D( tDiffuse1, uvOverlay );",
+					//"gl_FragColor = gl_FragColor * texture2D( tDiffuse1, uvOverlay ) + water + sandy + grass + rocky + snowy;",
 					//"gl_FragColor = gl_FragColor * mix ( tDiffuse1, water + sandy + grass + rocky + snowy, 1.0 - texture2D( tDisplacement, uvBase ) );",
 
 				"} else if( enableDiffuse2 ) {",

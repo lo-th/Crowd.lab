@@ -1,0 +1,21 @@
+[
+	"src/Rvo.js",
+	"src/dynamics/Simulator.js",
+	"src/dynamics/Agent.js",
+	"src/util/Performance.js",
+	"src/core/AgentTreeNode.js",
+	"src/core/Dijkstra.js",
+	"src/core/FloatPair.js",
+	"src/core/KdTree.js",
+	"src/core/KeyValuePair.js",
+	"src/core/Multimap.js",
+	"src/core/Obstacle.js",
+	"src/core/ObstacleTreeNode.js",
+	"src/core/RoadmapVertex.js",
+	"src/math/Det.js",
+	"src/math/DistSqPointLineSegment.js",
+	"src/math/LeftOf.js",
+	"src/math/Line.js",
+	"src/math/Sqr.js",
+	"src/math/Vector2.js"
+]

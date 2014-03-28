@@ -1,0 +1,2 @@
+RVO.AgentTreeNode = function() {
+}
