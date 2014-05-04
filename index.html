@@ -182,7 +182,8 @@ function init() {
     targetList.push(ground);
 
 
-    terrain = new TERRAIN.Generate(scene, 128, ww, 120, 36);
+    terrain = new TERRAIN.Generate(scene, 128, ww, 100, 36);
+    //scene.add(terrain.container);
     terrain.init( window.innerWidth, window.innerHeight );
 
     content = new THREE.Object3D();
@@ -248,6 +249,7 @@ function initLight() {
 //-----------------------------------------------------
 //  INIT SKYBOX
 //-----------------------------------------------------
+var sky;
 
 function initSky() {
      var format = ".jpg";
@@ -256,11 +258,11 @@ function initSky() {
                  r + "posy"+format, r + "negy"+format,
                  r + "posz"+format, r + "negz"+format ];
 
-    var cubeMap = THREE.ImageUtils.loadTextureCube( urls );
-    cubeMap.format = THREE.RGBFormat;
+    sky = THREE.ImageUtils.loadTextureCube( urls );
+    sky.format = THREE.RGBFormat;
 
     var cubeShader = THREE.ShaderLib['cube'];
-    cubeShader.uniforms['tCube'].value = cubeMap;
+    cubeShader.uniforms['tCube'].value = sky;
 
     var skyBoxMaterial = new THREE.ShaderMaterial( {
         fragmentShader: cubeShader.fragmentShader,
@@ -416,13 +418,17 @@ RvoWorker.onmessage = function(e) {
         }
     }
     if(phase === "RUN"){
-        var p;
+        var p, pz=0;
         var i = e.data.pos.length;
         while(i--){
             p =  e.data.pos[i];
             meshs[i].position.x = p[0];
             meshs[i].position.z = p[1];
-            if(terrain)meshs[i].position.y = terrain.getZ(p[0], p[1]);
+           // if(terrain)meshs[i].position.y = terrain.getZ(p[0], p[1]);
+            if(terrain)pz = terrain.getZ(p[0], p[1]);
+
+
+            meshs[i].position.lerp(new THREE.Vector3( p[0], pz, p[1] ), 0.25)
 
             meshs[i].rotation.y = e.data.rot[i];
         }
@@ -440,7 +446,7 @@ RvoWorker.onmessage = function(e) {
 //-----------------------------------------------------
 //  THREE RENDER LOOP
 //-----------------------------------------------------
-
+ 
 function loop() {
 
     t01 = Date.now();
@@ -451,7 +457,7 @@ function loop() {
     
     terrain.update(delta);
 
-    if(water)water.render();
+   // if(water)water.render();
 
 
     renderer.render( sceneback, camera )

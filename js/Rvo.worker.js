@@ -70,7 +70,7 @@ var update = function(){
 
         // data
         positions[i] = [ p.x,  p.y ];
-        rotations[i] = r * ToRad;
+        rotations[i] = r;
     }
 
     simulator.doStep();
@@ -137,14 +137,16 @@ function populate() {
             if (j == 2) {
                 simulator.addAgent(v.mul_k(330));
                 self.postMessage({tell:"ADD", type:"agent", radius:radius1 });
+               // simulator.setAgentMaxSpeed(c, 0);
             }
             if (j == 3) {
                 simulator.addAgent(v.mul_k(410));
                 self.postMessage({tell:"ADD", type:"agent", radius:radius1 });
+               // simulator.setAgentMaxSpeed(c, 0);
             }
 
-            if (j == 1)
-                simulator.setAgentRadius(i, radius2);
+          //  if (j == 1)
+         //       simulator.setAgentRadius(i, radius2);
 
 
             //simulator.setAgentMaxSpeed(c, .5 + Math.random());

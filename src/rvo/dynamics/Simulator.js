@@ -150,6 +150,12 @@ RVO.Simulator.prototype = {
     getAgentPositionScreen:function (agentNo) {
         return this.agents_[agentNo].positionScreen_;
     },
+    getAgentVelocity:function (agentNo) {
+        return this.agents_[agentNo].velocity_;
+    },
+    getAgentOldVelocity:function (agentNo) {
+        return this.agents_[agentNo].prefVelocity_;
+    },
     getAgentPosition:function (agentNo) {
         return this.agents_[agentNo].position_;
     },

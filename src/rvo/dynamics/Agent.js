@@ -19,6 +19,8 @@ RVO.Agent = function(){
     this.test = [];
     this.c = 0;
     this.RangeSq = null;
+    this.position_ = new RVO.Vector2(0, 0);
+    this.oldPosition_ = new RVO.Vector2(0, 0);
 }
 
 RVO.Agent.prototype = {
@@ -366,24 +368,11 @@ RVO.Agent.prototype = {
     },
     update:function () {
         this.velocity_ = this.newVelocity_;
+        this.oldPosition_ = this.position_;
+
         this.position_ = this.position_.plus(this.velocity_.mul_k(this.parent.timeStep_));
-        var v = 0;
-
-        if (this.c <= 30) {
-            this.orientation_ = Math.atan2(this.velocity_.y, this.velocity_.x) * RVO.ToDeg + 90;
-            this.test[this.c] = this.orientation_;
-            this.c++;
-        } else {
-            this.test.shift();
-            this.test[this.c - 1] = Math.atan2(this.velocity_.y, this.velocity_.x) + Math.PI;
-
-            for (var i = 0, j=this.test.length; i !== j; ++i) {
-                v += this.test[i];
-            }
-
-            v = v / this.c;
-            this.orientation_ = v * RVO.ToDeg + 270;
-        }
+        this.orientation_ = Math.atan2(this.oldPosition_.x-this.position_.x, this.oldPosition_.y-this.position_.y);
+        if(this.maxSpeed_==0) this.orientation_ = Math.atan2(this.prefVelocity_.x-this.position_.x, this.prefVelocity_.y-this.position_.y);
     },
     insertObstacleNeighbor:function (obstacle, rangeSq) {
         var nextObstacle_ = obstacle.nextObstacle_;
