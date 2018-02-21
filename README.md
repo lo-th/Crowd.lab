@@ -1,11 +1,12 @@
-<img src="http://lo-th.github.io/Rvo.js/images/logo.svg"/>  Rvo.js 
+<p align="center"><img src="http://lo-th.github.io/Crowd.lab/textures/logo.png"/>
 =========
 
-Rvo.js is a lightweight crowd simulator engine for javascript.<br>
-Is a work made by [Samuel Girardin](http://www.visualiser.fr) with Actionscript, C++ and now Javascript<br>
-It is an adaptation of a university algorithm.<br>
+Crowd.js is a lightweight crowd simulator engine for javascript.<br>
+It is an direct port of a university algorithm in C++ to JavaScript<br>
+made by [Samuel Girardin](http://www.visualiser.fr) using Emscripten<br>
+<br>
 
 
-Demo with three.js and worker:
+Demo on worker with three.js and code editor:
 
-[demo](http://lo-th.github.io/Rvo.js/index.html)
+[START](http://lo-th.github.io/Crowd.lab/index.html)</p>
