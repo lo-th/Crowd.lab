@@ -4,4 +4,4 @@
 It is an direct port of a university algorithm in C++ to JavaScript<br>
 made by [Samuel Girardin](http://www.visualiser.fr) using Emscripten<br><br>
 Demo on worker with three.js and code editor:<br>
-[START](http://lo-th.github.io/Crowd.lab/index.html)</p>
+<a href="http://lo-th.github.io/Crowd.lab/">START</a></p>
