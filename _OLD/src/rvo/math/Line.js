@@ -1,2 +1,0 @@
-RVO.Line = function() {
-}

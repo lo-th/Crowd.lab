@@ -1,2 +1,0 @@
-RVO.RoadmapVertex = function() {
-}
