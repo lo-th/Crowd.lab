@@ -53,7 +53,7 @@ function next ( p ) {
 
 	view.mesh = pool.meshByName ( 'heros' );
     
-    editor.init( launch, isWithCode, '#9966FF' );
+    editor.init( launch, isWithCode, '#9966FF', 'Crowd.lab' );
 
     intro.clear();
 
