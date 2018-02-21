@@ -1,5 +1,4 @@
-<p align="center"><img src="http://lo-th.github.io/Crowd.lab/textures/logo.png"/>
-=========
+<p align="center"><img src="http://lo-th.github.io/Crowd.lab/assets/textures/logo.png"/>
 
 Crowd.js is a lightweight crowd simulator engine for javascript.<br>
 It is an direct port of a university algorithm in C++ to JavaScript<br>
