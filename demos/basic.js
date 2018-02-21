@@ -5,17 +5,12 @@ function demo() {
     set({ 
         fps:60, 
         forceStep:0.3, 
-        iteration:1, 
-        precision:[ 20, 30, 20, 20 ],
-        //precision:[ 10, 15, 10, 10 ],
+        iteration:1,
+        precision:[ 10, 15, 10, 10 ],
         patchVelocity:false, 
     });
 
     populate();
-
-    //setTimeout( function(){ clear(); }, 4000 );
-
-    //setTimeout( function(){ populate(); }, 8000 );
 
 };
 
@@ -35,14 +30,5 @@ function populate () {
     }
 
     up();
-
-    
-
-}
-
-function clear () {
-
-    crowd.send( 'clear' );
-    view.reset();
 
 }
