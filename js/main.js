@@ -63,6 +63,12 @@ function next ( p ) {
     
 }
 
+function unPause () {
+
+    crowd.start();
+
+}
+
 function ready () {
 
     var hash = location.hash.substr( 1 );

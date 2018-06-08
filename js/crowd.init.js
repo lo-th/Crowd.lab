@@ -32,8 +32,6 @@ var crowd = ( function () {
 
     var R;
 
-    var stop = true;
-
 
     var stepNext = false;
     var timer = undefined;
@@ -93,7 +91,6 @@ var crowd = ( function () {
         start: function () {
 
             stepNext = true;
-            //stop = false;
 
             // create tranfere array if buffer
             if( isBuffer ) Gr = new Float32Array( GrMax );
@@ -117,7 +114,7 @@ var crowd = ( function () {
 
         sendData: function ( stamp ){
 
-            //if(stop) return;
+            if( view.pause ){ timer = null; return; }
 
             timer = requestAnimationFrame( crowd.sendData );
 
@@ -158,8 +155,6 @@ var crowd = ( function () {
         },
 
         reset: function( full ) {
-
-            //stop = true;
 
             if ( timer ) {
                window.cancelAnimationFrame( timer );
