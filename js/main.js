@@ -16,6 +16,7 @@ function init () {
     intro.init('Crowd: Samuel Girardin | Lab: 3th');
     view.camera.fov = 50;
     view.initGeometry();
+    //view.initMaterial();
     view.initGrid();
     view.addShadow();
     view.addTone();
@@ -34,9 +35,9 @@ function next ( p ) {
 
     view.mat['agent'] = new THREE.MeshBasicMaterial({ color:0x7caccc, wireframe:true });
     view.mat['agentHide'] = new THREE.MeshBasicMaterial({ color:0x7caccc, wireframe:true, transparent:true, opacity:0.1 });
-    view.mat['heros'] = new THREE.MeshStandardMaterial({ color:0xffffff, skinning:true, shadowSide:false, metalness:0.2, roughness:0.6 });
+    view.mat['heros'] = new THREE.MeshLambertMaterial({ color:0xffffff, skinning:true, shadowSide:false, reflectivity:0.4 });
     view.mat['way'] = new THREE.MeshBasicMaterial({ color:0xFF8800, wireframe:true });
-    view.mat['wall'] = new THREE.MeshStandardMaterial({ color:0x0088ff, transparent:true, opacity:0.3 });
+    view.mat['wall'] = new THREE.MeshLambertMaterial({ color:0x0088ff, transparent:true, opacity:0.3, shadowSide:false });
 
 	var t = new THREE.Texture( p['heros_c'] );
 	t.flipY = false;
@@ -52,6 +53,8 @@ function next ( p ) {
     view.mat.heros.envMap = t2;
 
 	view.mesh = pool.meshByName ( 'heros' );
+
+    console.log(view.mesh)
     
     editor.init( launch, isWithCode, '#9966FF', 'Crowd.lab' );
 

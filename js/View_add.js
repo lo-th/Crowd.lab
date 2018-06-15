@@ -74,7 +74,9 @@ View.prototype.agent = function ( o ) {
         var n = o.n || Math.randInt(1,5)
         var m2 = view.mesh['hero_0'+n].clone();//new THREE.Mesh( this.geo.cicle, this.mat.hero );
         m2.material = this.mat.heros;
-        m2.receiveShadow = false;
+        //m2.receiveShadow = false;
+        m2.castShadow = true;
+        m2.receiveShadow = true;
         m2.scale.set(0.3,0.3,0.3);
         m2.position.set( 0, 3 , 0);
         m2.play('idle',0.5)
