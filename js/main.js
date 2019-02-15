@@ -54,7 +54,7 @@ function next ( p ) {
 
 	view.mesh = pool.meshByName ( 'heros' );
 
-    console.log(view.mesh)
+    //console.log(view.mesh)
     
     editor.init( launch, isWithCode, '#9966FF', 'Crowd.lab' );
 

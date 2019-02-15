@@ -18,17 +18,28 @@ View.prototype.updateIntern = function () {
 
         c = a.children[0];
 
+        // time scale
+        var ts = s*3;
+        ts = ts < 0.15 ? 0.15 : ts;
+
+        // transition
+        var tt = 0.5;//s*2;
+       // tt = tt < 0.1 ? 0.1 : tt;
+
+        //if(i===0) console.log(s)
+
         if( c ){
             ca = c.currentAnimation.clip.name;
+            c.setTimeScale( ts );
             if( s > 0.25 ){
-                c.setTimeScale( s );
-                if(ca !== 'run') c.play('run',0.5)
+                //c.setTimeScale( s*2 );
+                if(ca !== 'run') c.play( 'run', tt )
             } else if(s>0){
-                c.setTimeScale( s );
-                if(ca !== 'walk') c.play('walk',0.5)
+                //c.setTimeScale( s*2 );
+                if(ca !== 'walk') c.play( 'walk', tt )
             } else{ 
-                c.setTimeScale( 0.25 );
-                if(ca !== 'idle') c.play('idle',0.5)
+                //c.setTimeScale( 0.25*2 );
+                if(ca !== 'idle') c.play( 'idle', tt )
             }
         }
 
@@ -74,9 +85,11 @@ View.prototype.agent = function ( o ) {
         var n = o.n || Math.randInt(1,5)
         var m2 = view.mesh['hero_0'+n].clone();//new THREE.Mesh( this.geo.cicle, this.mat.hero );
         m2.material = this.mat.heros;
-        //m2.receiveShadow = false;
+
+        m2.receiveShadow = false;
         m2.castShadow = true;
-        m2.receiveShadow = true;
+       // m2.receiveShadow = true;
+
         m2.scale.set(0.3,0.3,0.3);
         m2.position.set( 0, 3 , 0);
         m2.play('idle',0.5)
@@ -121,7 +134,7 @@ View.prototype.obstacle = function ( o ) {
 View.prototype.way = function ( o ) {
 
     o = o || {};
-    var m = new THREE.Mesh( this.geo.cicle, this.mat.way )
+    var m = new THREE.Mesh( this.geo.circle, this.mat.way )
     if( o.w ) m.position.set( o.w[0], 0, o.w[1] );
     else m.position.set( o.x || 0, 0, o.z || 0 );
     this.scene.add( m );
