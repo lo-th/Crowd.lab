@@ -57,6 +57,7 @@ function next ( p ) {
     //console.log(view.mesh)
     
     editor.init( launch, isWithCode, '#9966FF', 'Crowd.lab' );
+    view.setRefEditor( editor );
 
     intro.clear();
 
