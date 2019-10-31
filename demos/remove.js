@@ -47,11 +47,11 @@ function addOne () {
 
 function removeAll () {
 
-    var i = view.agents.length;
+    var i = simulation.agents.length;
 
     while ( i-- ){
 
-        view.removeAgent( { id:i })
+        simulation.removeAgent( { id:i })
 
     }
 

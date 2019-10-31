@@ -105,8 +105,8 @@ var crowd = ( function () {
             //if ( (time - 1000) > temp ){ temp = time; fps = count; count = 0; }; count++;
 
             //R = new Float32Array( Gr );
-            //this.onUpdate( R );
-            view.isNeedUpdate = true;
+            this.onUpdate( );
+            //view.isNeedUpdate = true;
 
             stepNext = true;
             
@@ -128,7 +128,7 @@ var crowd = ( function () {
                 if( stepNext ){
 
                     if ( (time - 1000) > temp ){ temp = time; fps = count; count = 0; }; count++;
-                    tell( 'three '+ view.fps + ' | crowd ' + fps );
+                    tell( 'three '+ view.getFps() + ' | crowd ' + fps );
 
                     if( isBuffer ) worker.postMessage( { m:'step', Gr:Gr }, [ Gr.buffer ] );
                     else worker.postMessage( { m:'step' } );
