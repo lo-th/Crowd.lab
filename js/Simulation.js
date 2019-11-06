@@ -8,7 +8,7 @@ function Simulation(){
 
     this.mat['agent'] = new THREE.MeshBasicMaterial({ color:0x7caccc, wireframe:true });
     this.mat['agentHide'] = new THREE.MeshBasicMaterial({ color:0x7caccc, wireframe:true, transparent:true, opacity:0.1 });
-    this.mat['heros'] = view.material({ name:'heros', skinning:true, map: view.texture( 'heros_c.jpg' ), roughness:0.75, metalness:0.25 })//new THREE.MeshLambertMaterial({ color:0xffffff, skinning:true, shadowSide:false, reflectivity:0.4 });
+    this.mat['heros'] = view.material({ name:'heros', skinning:true, map: {url: 'heros_c.jpg' }, roughness:0.75, metalness:0.25 })//new THREE.MeshLambertMaterial({ color:0xffffff, skinning:true, shadowSide:false, reflectivity:0.4 });
     this.mat['way'] = new THREE.MeshBasicMaterial({ color:0xFF8800, wireframe:true });
     this.mat['wall'] = view.material({ name:'wall', color:0x0088FF, transparent:true, opacity:0.3 })//new THREE.MeshLambertMaterial({  })
 
