@@ -1,6 +1,7 @@
 function demo() {
 
-    cam ({azim:0, polar:10, distance:50});
+    view.moveCam({ theta:0, phi:15, distance:50, target:[0,10,0] });
+    view.addSky({ url:'photo.jpg' });
 
     set({ 
         fps:60, 
